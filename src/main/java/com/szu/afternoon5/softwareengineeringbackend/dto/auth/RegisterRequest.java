@@ -31,7 +31,6 @@ public class RegisterRequest {
     /**
      * 可选昵称，支持中英文与表情，1-50 字符。
      */
-    @NotNull
     @JsonProperty("nickname")
     private String nickname;
 
