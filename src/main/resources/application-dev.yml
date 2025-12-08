@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: ${DEV_DATABASE_URL}
+    username: ${DEV_DATABASE_USERNAME}
+    password: ${DEV_DATABASE_PASSWORD}
+  sql:
+    init:
+      mode: always
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+
+wx:
+  test-jscode: TEST_TEST_ONLY_JSCODE
+
+jwt:
+  secret-key: a-string-secret-at-least-256-bits-long
