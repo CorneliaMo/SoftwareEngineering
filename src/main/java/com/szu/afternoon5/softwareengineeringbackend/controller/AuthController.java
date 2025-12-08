@@ -7,7 +7,10 @@ import com.szu.afternoon5.softwareengineeringbackend.dto.auth.LoginRequest;
 import com.szu.afternoon5.softwareengineeringbackend.dto.auth.RegisterRequest;
 import com.szu.afternoon5.softwareengineeringbackend.dto.auth.ResetPasswordRequest;
 import com.szu.afternoon5.softwareengineeringbackend.dto.auth.UserAuthResponse;
+import com.szu.afternoon5.softwareengineeringbackend.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,6 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 public class AuthController {
 
+    private final UserService userService;
+
+    public AuthController(UserService userService) {
+        this.userService = userService;
+    }
+
     /**
      * 用户账密注册。
      *
@@ -31,7 +40,7 @@ public class AuthController {
      */
     @PostMapping("/register")
     public UserAuthResponse register(@Valid @RequestBody RegisterRequest request) {
-        return null;
+        return userService.register(request);
     }
 
     /**
@@ -42,7 +51,7 @@ public class AuthController {
      */
     @PostMapping("/login")
     public UserAuthResponse login(@Valid @RequestBody LoginRequest request) {
-        return null;
+        return userService.userLogin(request);
     }
 
     /**
@@ -51,8 +60,10 @@ public class AuthController {
      * @param request 密码修改请求体
      */
     @PutMapping("/reset-password")
-    public BaseResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        return null;
+    @PreAuthorize("isAuthenticated()")
+    public BaseResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request, Authentication authentication) {
+        userService.resetPassword(request, authentication);
+        return new BaseResponse();
     }
 
     /**
@@ -63,6 +74,6 @@ public class AuthController {
      */
     @PostMapping("/admin-login")
     public AdminAuthResponse adminLogin(@Valid @RequestBody AdminLoginRequest request) {
-        return null;
+        return userService.adminLogin(request);
     }
 }
