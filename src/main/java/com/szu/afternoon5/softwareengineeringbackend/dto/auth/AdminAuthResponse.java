@@ -1,23 +1,37 @@
 package com.szu.afternoon5.softwareengineeringbackend.dto.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
+import com.szu.afternoon5.softwareengineeringbackend.dto.BaseResponse;
+import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * 管理员登录响应体，返回管理员信息与 JWT。
  */
-@Data
-public class AdminAuthResponse {
-
-    @JsonProperty("err_code")
-    private Integer errCode;
-
-    @JsonProperty("err_msg")
-    private String errMsg;
+@Getter
+@Setter
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class AdminAuthResponse extends BaseResponse {
 
     @JsonProperty("admin")
     private AdminInfo admin;
 
     @JsonProperty("jwt_token")
     private String jwtToken;
+
+    public AdminAuthResponse(ErrorCode errorCode, String errMsg, AdminInfo admin, String jwtToken) {
+        super(errorCode, errMsg);
+        this.admin = admin;
+        this.jwtToken = jwtToken;
+    }
+
+    public AdminAuthResponse(AdminInfo admin, String jwtToken) {
+        super();
+        this.admin = admin;
+        this.jwtToken = jwtToken;
+    }
 }
