@@ -7,6 +7,11 @@ import lombok.Data;
 
 import java.time.Instant;
 
+/**
+ * 标签实体，用于给帖子打标签并支持搜索过滤。
+ * <p>
+ * 可在此扩展描述、使用次数、颜色样式等字段，并为 normalizedName 添加唯一索引。
+ */
 @Data
 @Table(schema = "tags")
 public class Tag {
@@ -20,6 +25,9 @@ public class Tag {
 
     private Instant createdTime;
 
+    /**
+     * 创建标签的构造器，同时填充标准化名称以便去重。
+     */
     public Tag(String name, String normalizedName) {
         this.tagId = null;
         this.name = name;
@@ -27,6 +35,9 @@ public class Tag {
         this.createdTime = Instant.now();
     }
 
+    /**
+     * 持久化前补全创建时间。
+     */
     @PrePersist
     public void onCreate() {
         if (this.createdTime == null) {
