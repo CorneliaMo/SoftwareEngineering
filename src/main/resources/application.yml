@@ -1,0 +1,12 @@
+spring:
+  application:
+    name:
+      SoftwareEngineeringBackend
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+wx:
+  app-id: ${WX_APP_ID}
+  app-secret: ${WX_APP_SECRET}

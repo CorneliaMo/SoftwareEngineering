@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: ${PROD_DATABASE_URL}
+    username: ${PROD_DATABASE_USERNAME}
+    password: ${PROD_DATABASE_PASSWORD}
+  sql:
+    init:
+      mode: never
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+logging:
+  level:
+    root: WARN
+
+wx:
+  test-jscode: ${WX_TEST_JSCODE}
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
