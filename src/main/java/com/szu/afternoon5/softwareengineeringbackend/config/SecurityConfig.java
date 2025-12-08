@@ -29,7 +29,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http
                 .cors(Customizer.withDefaults())
                 .addFilterAt(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -52,7 +52,7 @@ public class SecurityConfig {
         return (request, response, accessDeniedException) -> {
             response.setContentType("application/json;charset=UTF-8");
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.getWriter().write("{\"err_code\": -1, \"err_msg\": \"权限不足\"}");
+            response.getWriter().write("{\"err_code\": 40300, \"err_msg\": \"没有访问该资源的权限\"}");
         };
     }
 
@@ -61,7 +61,7 @@ public class SecurityConfig {
         return (request, response, authException) -> {
             response.setContentType("application/json;charset=UTF-8");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("{\"err_code\": -1, \"err_msg\": \"未登录\"}");
+            response.getWriter().write("{\"err_code\": 40100, \"err_msg\": \"未认证或认证已失效\"}");
         };
     }
 

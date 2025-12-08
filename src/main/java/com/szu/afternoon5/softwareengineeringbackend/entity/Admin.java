@@ -4,7 +4,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Data;
-import lombok.ToString;
 
 import java.time.Instant;
 
