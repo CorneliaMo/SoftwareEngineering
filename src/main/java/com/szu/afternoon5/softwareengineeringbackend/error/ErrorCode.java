@@ -8,6 +8,7 @@ package com.szu.afternoon5.softwareengineeringbackend.error;
  * - 2xx 一般只保留 20000 作为成功码，其余通过 err_msg 描述。
  * - 4xx 表示客户端请求或权限问题。
  * - 5xx 表示服务端异常。
+ * 后续新增错误码时请遵循上述分段规范，并保持 defaultMessage 的语义清晰，便于前端直观展示。
  */
 public enum ErrorCode {
 

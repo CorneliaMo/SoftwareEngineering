@@ -7,6 +7,11 @@ import lombok.Data;
 
 import java.time.Instant;
 
+/**
+ * 管理员操作日志实体，记录后台动作及目标对象。
+ * <p>
+ * 未来可拓展地理位置、设备信息、差异化内容快照等字段，便于审计追踪。
+ */
 @Data
 @Table(schema = "operation_logs")
 public class OperationLog {
@@ -28,6 +33,9 @@ public class OperationLog {
 
     private Instant createdTime;
 
+    /**
+     * 记录一次后台操作的构造器，保存行为类型、目标及来源 IP。
+     */
     public OperationLog(Long adminId, String operationType, Long targetId, String targetType, String operationDetail, String ipAddress) {
         this.logId = null;
         this.adminId = adminId;
@@ -39,6 +47,9 @@ public class OperationLog {
         this.createdTime = Instant.now();
     }
 
+    /**
+     * 落库前补全创建时间，确保日志时间线准确。
+     */
     @PrePersist
     public void onCreate() {
         if (this.createdTime == null) {

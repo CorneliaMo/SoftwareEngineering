@@ -12,6 +12,11 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.Objects;
 
+/**
+ * JWT 工具类，负责生成与解析令牌。
+ * <p>
+ * 后续可增加刷新令牌、黑名单校验或多端设备标识，以提升安全性与可追踪性。
+ */
 @Component
 public class JwtUtils {
 
@@ -22,6 +27,10 @@ public class JwtUtils {
         this.SECRET_KEY = jwtConfig.getSecretKey();
     }
 
+    /**
+     * 生成包含登录类型的 JWT，默认有效期一周。
+     * 可通过传入自定义过期时间或在 claims 中补充更多业务字段。
+     */
     public String generateToken(Long userId, Long adminId, LoginPrincipal.LoginType loginType, Date expiration) {
         Claims claims = Jwts.claims();
 
@@ -46,6 +55,10 @@ public class JwtUtils {
                 .compact();
     }
 
+    /**
+     * 解析 JWT 并返回 claims，失败时抛出 {@link JwtException}。
+     * 可在外层结合缓存或数据库校验实现令牌吊销。
+     */
     public Claims parseToken(String token) throws JwtException {
         return Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()))

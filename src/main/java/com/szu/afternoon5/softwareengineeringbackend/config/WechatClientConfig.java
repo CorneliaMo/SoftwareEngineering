@@ -9,9 +9,18 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import tools.jackson.databind.json.JsonMapper;
 
+/**
+ * 微信接口客户端配置，提供自定义反序列化能力的 {@link WebClient}。
+ * <p>
+ * 如需接入代理、限流或监控，可在构建 {@code WebClient} 时追加过滤器或自定义 ExchangeStrategies。
+ */
 @Configuration
 public class WechatClientConfig {
 
+    /**
+     * 构建用于访问微信开放接口的 WebClient，定制 JSON 解码以兼容文本返回值。
+     * 若后续增加重试、超时策略，可在此处统一封装。
+     */
     @Bean
     @Qualifier("wechatWebClient")
     public WebClient wechatWebClient() {

@@ -6,6 +6,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/**
+ * 微信工具类，封装与微信开放接口的交互逻辑。
+ * <p>
+ * 可在此增加缓存、错误重试、接口调用监控等功能，统一管理外部依赖调用。
+ */
 @Component
 public class WechatUtils {
 
@@ -17,6 +22,10 @@ public class WechatUtils {
         this.webClient = wxWebClient;
     }
 
+    /**
+     * 根据前端传递的 jsCode 获取 openid，测试场景下返回固定值。
+     * 后续可在此校验错误码、封装异常或返回更多会话信息。
+     */
     public String getOpenid(String jscode) {
         if (jscode.equals(wechatConfig.getTestJscode())){
             return "TEST_ONLY_OPENID";

@@ -17,6 +17,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * JWT 鉴权过滤器，从 Authorization 头解析令牌并写入 SecurityContext。
+ * <p>
+ * 如需增加黑名单校验、刷新令牌逻辑或审计日志，可在解析成功后补充相应的校验与记录。
+ */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -27,6 +32,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         this.jwtUtils = jwtUtils;
     }
 
+    /**
+     * 解析 Bearer Token，构建 {@link LoginPrincipal} 并注入上下文。
+     * 当前仅支持用户与管理员两种登录类型，若后续扩展角色体系，可在此处调整 claims 解析逻辑。
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, @Nonnull HttpServletResponse response,
                                     @Nonnull FilterChain filterChain)

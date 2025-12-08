@@ -18,6 +18,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/**
+ * Spring Security 配置类，负责注册过滤器链与异常处理逻辑。
+ * <p>
+ * 后续可以在此扩展权限模型、登录方式（如短信、OAuth）、自定义安全日志等能力。
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -28,6 +33,10 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
+    /**
+     * 构建主过滤器链，统一配置跨域、JWT 鉴权以及未认证/未授权的处理方式。
+     * 如需开放更多匿名接口或增加安全过滤器，可在此方法中按顺序调整。
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http
@@ -47,6 +56,10 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * 未授权访问处理器，输出统一的 JSON 响应格式。
+     * 若需要适配国际化或增加日志，可在此处调整响应内容与记录方式。
+     */
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
@@ -56,6 +69,10 @@ public class SecurityConfig {
         };
     }
 
+    /**
+     * 未认证处理器，提示用户完成登录流程。
+     * 可结合前端协议约定扩展错误码或跳转逻辑。
+     */
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
@@ -65,6 +82,10 @@ public class SecurityConfig {
         };
     }
 
+    /**
+     * 全局跨域配置，当前默认放开来源与头信息，便于前后端联调。
+     * 上线时可收紧白名单、启用凭据传递，并补充暴露头字段。
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
