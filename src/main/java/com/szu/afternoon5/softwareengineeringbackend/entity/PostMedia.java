@@ -24,6 +24,9 @@ public class PostMedia {
 
     private MediaType mediaType;
 
+    // 用于指示媒体在帖子中的顺序
+    private Integer sortOrder;
+
     public enum MediaType {
         image, video
     }
@@ -31,11 +34,12 @@ public class PostMedia {
     /**
      * 创建媒体记录的构造器，存储关联帖子与上传者信息。
      */
-    public PostMedia(Long postId, Long uploadUserId, String mediaUrl, MediaType mediaType) {
+    public PostMedia(Long postId, Long uploadUserId, String mediaUrl, MediaType mediaType, Integer sortOrder) {
         this.mediaId = null;
         this.postId = postId;
         this.uploadUserId = uploadUserId;
         this.mediaUrl = mediaUrl;
         this.mediaType = mediaType;
+        this.sortOrder = sortOrder;
     }
 }
