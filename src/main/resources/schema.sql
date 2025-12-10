@@ -40,8 +40,10 @@ CREATE TABLE IF NOT EXISTS "posts" (
 	"updated_time" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"rating_count" INTEGER NOT NULL DEFAULT 0,
 	"comment_count" INTEGER NOT NULL DEFAULT 0,
+    "cover_media_id" INTEGER NULL DEFAULT NULL,
 	PRIMARY KEY ("post_id"),
-	CONSTRAINT "fk_posts_users" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL
+	CONSTRAINT "fk_posts_users" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT "FK_posts_post_media" FOREIGN KEY ("cover_media_id") REFERENCES "post_media" ("media_id") ON UPDATE CASCADE ON DELETE SET NULL
 )
 ;
 COMMENT ON TABLE "posts" IS '帖子表，储存用户发表的帖子';
@@ -55,6 +57,7 @@ COMMENT ON COLUMN "posts"."created_time" IS '创建时间';
 COMMENT ON COLUMN "posts"."updated_time" IS '更新时间';
 COMMENT ON COLUMN "posts"."rating_count" IS '评分数量';
 COMMENT ON COLUMN "posts"."comment_count" IS '评论数量';
+COMMENT ON COLUMN "posts"."cover_media_id" IS '冗余字段，储存封面对应的postMediaId';
 CREATE INDEX IF NOT EXISTS "fk__posts__users" ON "posts" ("user_id");
 
 CREATE TABLE IF NOT EXISTS "post_media" (

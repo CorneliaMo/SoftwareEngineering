@@ -1,8 +1,8 @@
 package com.szu.afternoon5.softwareengineeringbackend.entity;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 帖子媒体实体，记录图片或视频等资源信息。
@@ -10,10 +10,13 @@ import lombok.Data;
  * 后续可加入排序字段、封面标记或存储桶信息，并考虑为不同媒体类型设置校验规则。
  */
 @Data
-@Table(schema = "post_media")
+@Entity
+@NoArgsConstructor
+@Table(name = "post_media")
 public class PostMedia {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long mediaId;
 
     private Long postId;

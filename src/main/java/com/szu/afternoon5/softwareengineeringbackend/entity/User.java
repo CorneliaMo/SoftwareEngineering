@@ -1,9 +1,8 @@
 package com.szu.afternoon5.softwareengineeringbackend.entity;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
@@ -13,10 +12,13 @@ import java.time.Instant;
  * 后续可增加账户安全字段（如盐值、多因素状态）、偏好设置或第三方绑定标记，并完善索引以提升查询性能。
  */
 @Data
-@Table(schema = "users")
+@Entity
+@NoArgsConstructor
+@Table(name = "users")
 public class User {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
     private String username;
