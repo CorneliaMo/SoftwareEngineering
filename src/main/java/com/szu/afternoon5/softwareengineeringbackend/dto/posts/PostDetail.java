@@ -1,9 +1,13 @@
 package com.szu.afternoon5.softwareengineeringbackend.dto.posts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.szu.afternoon5.softwareengineeringbackend.entity.Post;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 /**
  * 帖子详细信息，包含正文内容与时间字段。
@@ -14,10 +18,10 @@ import lombok.ToString;
 public class PostDetail {
 
     @JsonProperty("post_id")
-    private Integer postId;
+    private Long postId;
 
     @JsonProperty("user_id")
-    private Integer userId;
+    private Long userId;
 
     @JsonProperty("post_title")
     private String postTitle;
@@ -26,10 +30,10 @@ public class PostDetail {
     private String postText;
 
     @JsonProperty("created_time")
-    private String createdTime;
+    private OffsetDateTime createdTime;
 
     @JsonProperty("updated_time")
-    private String updatedTime;
+    private OffsetDateTime updatedTime;
 
     @JsonProperty("rating_count")
     private Integer ratingCount;
@@ -37,15 +41,14 @@ public class PostDetail {
     @JsonProperty("comment_count")
     private Integer commentCount;
 
-    public PostDetail(Integer postId, Integer userId, String postTitle, String postText, String createdTime,
-                      String updatedTime, Integer ratingCount, Integer commentCount) {
-        this.postId = postId;
-        this.userId = userId;
-        this.postTitle = postTitle;
-        this.postText = postText;
-        this.createdTime = createdTime;
-        this.updatedTime = updatedTime;
-        this.ratingCount = ratingCount;
-        this.commentCount = commentCount;
+    public PostDetail(Post post) {
+        this.postId = post.getPostId();
+        this.userId = post.getUserId();
+        this.postTitle = post.getPostTitle();
+        this.postText = post.getPostText();
+        this.createdTime = post.getCreatedTime().atZone(ZoneId.systemDefault()).toOffsetDateTime();
+        this.updatedTime = post.getUpdatedTime().atZone(ZoneId.systemDefault()).toOffsetDateTime();
+        this.ratingCount = post.getRatingCount();
+        this.commentCount = post.getCommentCount();
     }
 }

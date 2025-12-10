@@ -1,6 +1,7 @@
 package com.szu.afternoon5.softwareengineeringbackend.dto.posts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.szu.afternoon5.softwareengineeringbackend.entity.PostMedia;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,9 +21,9 @@ public class UploadMediaRequest {
 
     @NotNull
     @JsonProperty("type")
-    private String type;
+    private PostMedia.MediaType type;
 
-    public UploadMediaRequest(MultipartFile file, String type) {
+    public UploadMediaRequest(MultipartFile file, PostMedia.MediaType type) {
         this.file = file;
         this.type = type;
     }

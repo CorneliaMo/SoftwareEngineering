@@ -8,8 +8,12 @@ import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PublishPostReques
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PublishPostResponse;
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.UploadMediaRequest;
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.UploadMediaResponse;
+import com.szu.afternoon5.softwareengineeringbackend.service.PostMediaService;
+import com.szu.afternoon5.softwareengineeringbackend.service.PostService;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -28,7 +32,16 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/posts")
+@PreAuthorize("@perm.isUser(authentication.principal)")
 public class PostController {
+
+    private final PostMediaService postMediaService;
+    private final PostService postService;
+
+    public PostController(PostMediaService postMediaService, PostService postService) {
+        this.postMediaService = postMediaService;
+        this.postService = postService;
+    }
 
     /**
      * 上传媒体文件。
@@ -37,8 +50,8 @@ public class PostController {
      * @return 上传结果，返回媒体记录信息
      */
     @PostMapping(value = "/upload-media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public UploadMediaResponse uploadMedia(@Valid @ModelAttribute UploadMediaRequest request) {
-        return null;
+    public UploadMediaResponse uploadMedia(@Valid @ModelAttribute UploadMediaRequest request, Authentication authentication) {
+        return postMediaService.uploadMedia(request, authentication);
     }
 
     /**
@@ -48,8 +61,8 @@ public class PostController {
      * @return 发布结果，包含帖子标识
      */
     @PostMapping("/publish")
-    public PublishPostResponse publish(@Valid @RequestBody PublishPostRequest request) {
-        return null;
+    public PublishPostResponse publishPost(@Valid @RequestBody PublishPostRequest request, Authentication authentication) {
+        return postService.publish(request, authentication);
     }
 
     /**
@@ -57,16 +70,14 @@ public class PostController {
      *
      * @param currentPage 当前页码
      * @param pageSize    页面容量
-     * @param keyword     搜索关键词
-     * @param userId      可选的用户过滤
+     * @param userId      用户过滤
      * @return 帖子分页列表
      */
     @GetMapping
-    public PostListResponse list(@RequestParam("current_page") Integer currentPage,
-                                 @RequestParam("page_size") Integer pageSize,
-                                 @RequestParam(value = "keyword", required = false) String keyword,
-                                 @RequestParam(value = "user_id", required = false) Long userId) {
-        return null;
+    public PostListResponse getPostList(@RequestParam("current_page") Integer currentPage,
+                                        @RequestParam("page_size") Integer pageSize,
+                                        @RequestParam(value = "user_id") Long userId) {
+        return postService.getPostList(currentPage, pageSize, userId);
     }
 
     /**
@@ -76,8 +87,8 @@ public class PostController {
      * @return 帖子详情与媒体列表
      */
     @GetMapping("/detail/{post_id}")
-    public PostDetailResponse detail(@PathVariable("post_id") Long postId) {
-        return null;
+    public PostDetailResponse getPostDetail(@PathVariable("post_id") Long postId) {
+        return postService.getPostDetail(postId);
     }
 
     /**
@@ -88,9 +99,12 @@ public class PostController {
      * @return 操作结果
      */
     @PutMapping("/detail/{post_id}")
-    public BaseResponse update(@PathVariable("post_id") Long postId,
-                               @Valid @RequestBody PostUpdateRequest request) {
-        return null;
+    @PreAuthorize("@perm.isUser(authentication.principal) || @perm.isAdmin(authentication.principal)")
+    public BaseResponse updatePostDetail(@PathVariable("post_id") Long postId,
+                                         @Valid @RequestBody PostUpdateRequest request,
+                                         Authentication authentication) {
+        postService.updatePostDetail(postId, request, authentication);
+        return new BaseResponse();
     }
 
     /**
@@ -100,7 +114,8 @@ public class PostController {
      * @return 操作结果
      */
     @DeleteMapping("/detail/{post_id}")
-    public BaseResponse delete(@PathVariable("post_id") Long postId) {
-        return null;
+    public BaseResponse deletePost(@PathVariable("post_id") Long postId, Authentication authentication) {
+        postService.deletePost(postId, authentication);
+        return new BaseResponse();
     }
 }
