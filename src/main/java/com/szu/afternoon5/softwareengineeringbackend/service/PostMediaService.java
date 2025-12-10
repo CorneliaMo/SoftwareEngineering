@@ -23,6 +23,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * 帖子媒体服务，负责处理媒体文件上传、与帖子绑定及查询媒体信息等操作。
+ */
 @Service
 public class PostMediaService {
     private final PostMediaRepository postMediaRepository;
@@ -38,6 +41,13 @@ public class PostMediaService {
     }
 
     // TODO：未来这里可以实现安全检查、图片视频预处理
+    /**
+     * 上传图片或视频并记录媒体信息。
+     *
+     * @param request        上传参数，包含媒体类型与文件内容
+     * @param authentication 鉴权信息，用于确定上传者身份
+     * @return 上传后的媒体资源信息
+     */
     public UploadMediaResponse uploadMedia(@Valid UploadMediaRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
         if (loginPrincipal == null) {
@@ -48,7 +58,7 @@ public class PostMediaService {
                 throw new BusinessException(ErrorCode.BAD_REQUEST, "上传文件不能为空");
             }
 
-            // 校验文件类型
+            // 校验文件类型，保证仅图片或视频可以上传
             String contentType = file.getContentType();
             if (contentType == null || !(contentType.startsWith("image/") || contentType.startsWith("video/"))) {
                 throw new BusinessException(ErrorCode.BAD_REQUEST, "仅支持图片和视频上传");
@@ -68,6 +78,13 @@ public class PostMediaService {
         }
     }
 
+    /**
+     * 生成对象存储中的文件路径，格式为 uploads/user/{category}/yyyy/MM/dd/{uuid}.{ext}
+     *
+     * @param category         媒体分类（图片/视频）
+     * @param originalFilename 原始文件名
+     * @return 构建好的路径字符串
+     */
     private String buildFileUploadPath(String category, String originalFilename) {
         // 1. 日期路径：2025/12/09
         String datePath = LocalDate.now().format(DATE_PATH_FORMATTER);
@@ -86,6 +103,12 @@ public class PostMediaService {
                 ext);
     }
 
+    /**
+     * 提取文件扩展名，用于保留原始后缀。
+     *
+     * @param filename 原始文件名
+     * @return 扩展名（不含点）
+     */
     private String getExtension(String filename) {
         if (filename == null || !filename.contains(".")) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "无法识别文件类型");
@@ -93,6 +116,12 @@ public class PostMediaService {
         return filename.substring(filename.lastIndexOf('.') + 1);
     }
 
+    /**
+     * 将媒体批量绑定到帖子，若媒体被占用或不存在则抛出异常。
+     *
+     * @param postId   目标帖子 ID
+     * @param mediaIds 媒体 ID 列表
+     */
     @Transactional
     public void bindMediaToPost(Long postId, List<Long> mediaIds) {
         List<PostMedia> postMedias = postMediaRepository.findAllById(mediaIds);
@@ -116,6 +145,12 @@ public class PostMediaService {
         }
     }
 
+    /**
+     * 查询帖子关联的媒体信息列表。
+     *
+     * @param postId 帖子 ID
+     * @return 媒体信息集合
+     */
     public List<MediaInfo> getPostMedia(Long postId) {
         List<PostMedia> postMedia = postMediaRepository.findAllByPostId(postId);
         return postMedia.stream().map(MediaInfo::new).toList();

@@ -9,6 +9,9 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface PostRepository extends JpaRepository<Post,Long> {
 
+    /**
+     * 查询用户的帖子并携带封面媒体信息，支持分页。
+     */
     @Query(value = """
     SELECT p, pm FROM Post p
     JOIN PostMedia pm ON p.coverMediaId = pm.mediaId

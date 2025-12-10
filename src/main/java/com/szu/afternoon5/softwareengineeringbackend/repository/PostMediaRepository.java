@@ -7,5 +7,8 @@ import java.util.List;
 
 public interface PostMediaRepository extends JpaRepository<PostMedia,Long> {
 
+    /**
+     * 查询帖子绑定的所有媒体。
+     */
     List<PostMedia> findAllByPostId(Long postId);
 }

@@ -19,6 +19,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * 帖子服务，负责处理帖子发布、查询、更新和删除等核心业务逻辑，
+ * 并在需要时协调标签、媒体等子服务完成关联操作。
+ */
 @Service
 public class PostService {
     private final TagService tagService;
@@ -35,6 +39,13 @@ public class PostService {
         this.pageableUtils = pageableUtils;
     }
 
+    /**
+     * 发布帖子：校验用户身份后保存帖子主体，再绑定标签与媒体。
+     *
+     * @param request         发布请求，包含正文、标题、标签与媒体信息
+     * @param authentication   Spring 安全上下文，提供登录用户信息
+     * @return 发布结果，包含新帖的基础信息
+     */
     @Transactional
     public PublishPostResponse publish(@Valid PublishPostRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
@@ -51,6 +62,14 @@ public class PostService {
         }
     }
 
+    /**
+     * 分页查询用户的帖子列表，默认按创建时间倒序。
+     *
+     * @param currentPage 当前页码（从 1 开始）
+     * @param pageSize    每页数量
+     * @param userId      目标用户 ID
+     * @return 帖子列表及分页信息
+     */
     public PostListResponse getPostList(Integer currentPage, Integer pageSize, Long userId) {
         if (userRepository.existsByUserId(userId)) {
             List<String> sortColumns = List.of("post_title", "created_time", "updated_time", "rating_count", "comment_count");
@@ -72,6 +91,12 @@ public class PostService {
         }
     }
 
+    /**
+     * 获取帖子详情，包括正文、统计信息与媒体资源列表。
+     *
+     * @param postId 帖子 ID
+     * @return 帖子详情数据
+     */
     public PostDetailResponse getPostDetail(Long postId) {
         Optional<Post> postOptional = postRepository.findById(postId);
         if (postOptional.isEmpty()) {
@@ -82,6 +107,13 @@ public class PostService {
         }
     }
 
+    /**
+     * 更新帖子内容及标签，需要帖子作者或管理员权限。
+     *
+     * @param postId         帖子 ID
+     * @param request        更新内容请求
+     * @param authentication 鉴权信息
+     */
     @Transactional
     public void updatePostDetail(Long postId, @Valid PostUpdateRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
@@ -101,6 +133,7 @@ public class PostService {
                     if (postUpdateContent.getPostText() != null && !postUpdateContent.getPostText().isEmpty()) {
                         post.setPostText(postUpdateContent.getPostText());
                     }
+                    // 在保存基础信息后同步更新标签
                     postRepository.save(post);
                     tagService.updatePostTags(post.getPostId(), request.getTags());
                 } else {
@@ -110,6 +143,12 @@ public class PostService {
         }
     }
 
+    /**
+     * 软删除帖子，要求操作者为作者本人或管理员。
+     *
+     * @param postId         帖子 ID
+     * @param authentication 鉴权信息
+     */
     @Transactional
     public void deletePost(Long postId, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
