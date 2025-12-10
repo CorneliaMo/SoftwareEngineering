@@ -25,6 +25,7 @@ public class PostMedia {
 
     private String mediaUrl;
 
+    @Enumerated(EnumType.STRING)
     private MediaType mediaType;
 
     public enum MediaType {
