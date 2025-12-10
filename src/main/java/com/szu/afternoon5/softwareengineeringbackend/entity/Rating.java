@@ -1,9 +1,8 @@
 package com.szu.afternoon5.softwareengineeringbackend.entity;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
@@ -13,10 +12,13 @@ import java.time.Instant;
  * 未来可拓展评分维度（如多指标评分）、防重复校验以及统计字段（平均分、总分）。
  */
 @Data
-@Table(schema = "ratings")
+@Entity
+@NoArgsConstructor
+@Table(name = "ratings")
 public class Rating {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long ratingId;
 
     private Long postId;

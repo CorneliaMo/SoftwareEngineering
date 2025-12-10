@@ -1,9 +1,8 @@
 package com.szu.afternoon5.softwareengineeringbackend.entity;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
@@ -13,10 +12,13 @@ import java.time.Instant;
  * 未来可拓展地理位置、设备信息、差异化内容快照等字段，便于审计追踪。
  */
 @Data
-@Table(schema = "operation_logs")
+@Entity
+@NoArgsConstructor
+@Table(name = "operation_logs")
 public class OperationLog {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long logId;
 
     private Long adminId;

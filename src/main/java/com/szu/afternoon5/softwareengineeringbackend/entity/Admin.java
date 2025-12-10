@@ -1,9 +1,8 @@
 package com.szu.afternoon5.softwareengineeringbackend.entity;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
@@ -13,10 +12,13 @@ import java.time.Instant;
  * 后续可为管理员增加权限集合、登录审计字段，并结合 ORM 注解完善约束（如唯一索引、非空限制）。
  */
 @Data
-@Table(schema = "admins")
+@Entity
+@NoArgsConstructor
+@Table(name = "admins")
 public class Admin {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long adminId;
 
     private Long userId;
