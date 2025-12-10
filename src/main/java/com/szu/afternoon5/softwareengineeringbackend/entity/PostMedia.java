@@ -25,6 +25,7 @@ public class PostMedia {
 
     private String mediaUrl;
 
+    @Enumerated(EnumType.STRING)
     private MediaType mediaType;
 
     // 用于指示媒体在帖子中的顺序

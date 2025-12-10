@@ -1,6 +1,7 @@
 package com.szu.afternoon5.softwareengineeringbackend.dto.posts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.szu.afternoon5.softwareengineeringbackend.entity.PostMedia;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -14,25 +15,25 @@ import lombok.ToString;
 public class PostMediaItem {
 
     @JsonProperty("media_id")
-    private Integer mediaId;
+    private Long mediaId;
 
     @JsonProperty("post_id")
-    private Integer postId;
+    private Long postId;
 
     @JsonProperty("upload_user_id")
-    private Integer uploadUserId;
+    private Long uploadUserId;
 
     @JsonProperty("media_url")
     private String mediaUrl;
 
     @JsonProperty("media_type")
-    private String mediaType;
+    private PostMedia.MediaType mediaType;
 
-    public PostMediaItem(Integer mediaId, Integer postId, Integer uploadUserId, String mediaUrl, String mediaType) {
-        this.mediaId = mediaId;
-        this.postId = postId;
-        this.uploadUserId = uploadUserId;
-        this.mediaUrl = mediaUrl;
-        this.mediaType = mediaType;
+    public PostMediaItem(PostMedia postMedia) {
+        this.mediaId = postMedia.getMediaId();
+        this.postId = postMedia.getPostId();
+        this.uploadUserId = postMedia.getUploadUserId();
+        this.mediaUrl = postMedia.getMediaUrl();
+        this.mediaType = postMedia.getMediaType();
     }
 }

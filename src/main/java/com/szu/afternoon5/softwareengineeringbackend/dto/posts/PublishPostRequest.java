@@ -18,10 +18,6 @@ import lombok.ToString;
 public class PublishPostRequest {
 
     @NotNull
-    @JsonProperty("post_type")
-    private Integer postType;
-
-    @NotNull
     @JsonProperty("post_title")
     private String postTitle;
 
@@ -33,11 +29,10 @@ public class PublishPostRequest {
     private List<String> tags;
 
     @JsonProperty("media_ids")
-    private List<Integer> mediaIds;
+    private List<Long> mediaIds;
 
-    public PublishPostRequest(Integer postType, String postTitle, String postText, List<String> tags,
-                              List<Integer> mediaIds) {
-        this.postType = postType;
+    public PublishPostRequest(String postTitle, String postText, List<String> tags,
+                              List<Long> mediaIds) {
         this.postTitle = postTitle;
         this.postText = postText;
         this.tags = tags;

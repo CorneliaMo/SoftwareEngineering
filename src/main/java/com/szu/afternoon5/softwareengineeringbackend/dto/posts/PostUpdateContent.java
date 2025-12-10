@@ -19,12 +19,8 @@ public class PostUpdateContent {
     @JsonProperty("post_text")
     private String postText;
 
-    @JsonProperty("comment_count")
-    private Integer commentCount;
-
-    public PostUpdateContent(String postTitle, String postText, Integer commentCount) {
+    public PostUpdateContent(String postTitle, String postText) {
         this.postTitle = postTitle;
         this.postText = postText;
-        this.commentCount = commentCount;
     }
 }
