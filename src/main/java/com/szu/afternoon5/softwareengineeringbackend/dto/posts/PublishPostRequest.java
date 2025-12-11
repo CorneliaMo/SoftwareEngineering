@@ -1,0 +1,41 @@
+package com.szu.afternoon5.softwareengineeringbackend.dto.posts;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
+
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+/**
+ * 发布帖子请求体，包含帖子类型、标题、正文、标签与媒体引用。
+ */
+@Getter
+@Setter
+@ToString(callSuper = true)
+public class PublishPostRequest {
+
+    @NotNull
+    @JsonProperty("post_title")
+    private String postTitle;
+
+    @NotNull
+    @JsonProperty("post_text")
+    private String postText;
+
+    @JsonProperty("tags")
+    private List<String> tags;
+
+    @JsonProperty("media_ids")
+    private List<Long> mediaIds;
+
+    public PublishPostRequest(String postTitle, String postText, List<String> tags,
+                              List<Long> mediaIds) {
+        this.postTitle = postTitle;
+        this.postText = postText;
+        this.tags = tags;
+        this.mediaIds = mediaIds;
+    }
+}

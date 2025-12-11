@@ -65,13 +65,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     loginPrincipal = new LoginPrincipal(userId, adminId, LoginPrincipal.LoginType.admin);
                 } else {
                     // 不符合任何有效登录类型，抛出异常
-                    throw new JwtException("Invalid login information.");
+                    throw new JwtException("Invalid userLogin information.");
                 }
                 authentication = new UsernamePasswordAuthenticationToken(loginPrincipal, null, null);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Throwable e) {
                 // token 无效
-                throw new JwtException("Invalid login information.");
+                throw new JwtException("Invalid userLogin information.");
             }
         }
 
