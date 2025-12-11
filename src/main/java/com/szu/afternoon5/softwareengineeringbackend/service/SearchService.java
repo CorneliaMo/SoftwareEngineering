@@ -103,18 +103,23 @@ public class SearchService {
         // 1. 用 jieba 做搜索模式分词
         String queryText = buildFullTextQuery(keyword);
 
-        // 2. 调用 Postgres 全文检索
-        Page<PostWithCoverForNative> postWithCoverPage = postRepository.searchFullText(queryText, pageable);
+        // fix：处理分词可能产生的空值
+        if (queryText == null) {
+            return new PostListResponse(0, 0, 1, pageSize, List.of());
+        } else {
+            // 2. 调用 Postgres 全文检索
+            Page<PostWithCoverForNative> postWithCoverPage = postRepository.searchFullText(queryText, pageable);
 
-        return new PostListResponse(
-                postWithCoverPage.getTotalPages(),
-                (int) postWithCoverPage.getTotalElements(),
-                postWithCoverPage.getNumber() + 1,
-                postWithCoverPage.getSize(),
-                postWithCoverPage.stream().map(postWithCover ->
-                    new PostSummaryItem(new PostInfo(postWithCover.getPost()), new MediaInfo(postWithCover.getPostMedia()))
-                ).toList()
-        );
+            return new PostListResponse(
+                    postWithCoverPage.getTotalPages(),
+                    (int) postWithCoverPage.getTotalElements(),
+                    postWithCoverPage.getNumber() + 1,
+                    postWithCoverPage.getSize(),
+                    postWithCoverPage.stream().map(postWithCover ->
+                            new PostSummaryItem(new PostInfo(postWithCover.getPost()), new MediaInfo(postWithCover.getPostMedia()))
+                    ).toList()
+            );
+        }
     }
 
     /**

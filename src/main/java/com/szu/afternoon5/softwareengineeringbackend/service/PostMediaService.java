@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * 帖子媒体服务，负责处理媒体文件上传、与帖子绑定及查询媒体信息等操作。
@@ -134,15 +136,26 @@ public class PostMediaService {
         if (existingIds.size() != mediaIds.size()) {
             // 一部分媒体id无效
             throw new BusinessException(ErrorCode.BAD_REQUEST, "附件列表无效");
-        } else if (postMedias.stream().anyMatch(media -> media.getPostId() != null)){
+        } else if (postMedias.stream().anyMatch(media -> media.getPostId() != null && !media.getPostId().equals(postId))) {
             // 存在已被其他帖子引用的媒体
             throw new BusinessException(ErrorCode.CONFLICT, "附件已被其他帖子引用");
         } else {
             if (!mediaIds.isEmpty()) {
+                // fix：以mediaIds的顺序为基准
+                Map<Long, Integer> orderMap =
+                        IntStream.range(0, mediaIds.size())
+                                .boxed()
+                                .collect(Collectors.toMap(
+                                        mediaIds::get,
+                                        i -> i + 1
+                                ));
+
                 // 批量设置postId，记录提交顺序并保存
-                int sortOrder = 0;
                 for (PostMedia postMedia : postMedias) {
-                    postMedia.setSortOrder(sortOrder++);
+                    Integer order = orderMap.get(postMedia.getMediaId());
+                    if (order != null) {
+                        postMedia.setSortOrder(order);
+                    }
                     postMedia.setPostId(postId);
                 }
                 postMediaRepository.saveAll(postMedias);

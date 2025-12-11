@@ -114,6 +114,7 @@ public class PostController {
      * @return 操作结果
      */
     @DeleteMapping("/detail/{post_id}")
+    @PreAuthorize("@perm.isUser(authentication.principal) || @perm.isAdmin(authentication.principal)")
     public BaseResponse deletePost(@PathVariable("post_id") Long postId, Authentication authentication) {
         postService.deletePost(postId, authentication);
         return new BaseResponse();
