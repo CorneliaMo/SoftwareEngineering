@@ -22,19 +22,19 @@ public class MyCommentsItem {
     private Long commentId;
 
     /**
-     * 帖子ID，标识评论所属的帖子。
+     * 帖子ID，标识评论所属的帖子（可为空）。
      */
     @JsonProperty("post_id")
     private Long postId;
 
     /**
-     * 用户ID，发出评论的用户标识。
+     * 用户ID，发出评论的用户标识（可为空）。
      */
     @JsonProperty("user_id")
     private Long userId;
 
     /**
-     * 父评论ID，用于回复功能，标识被回复的评论。
+     * 父评论ID，用于回复功能，标识被回复的评论（可为空）。
      */
     @JsonProperty("parent_id")
     private Long parentId;

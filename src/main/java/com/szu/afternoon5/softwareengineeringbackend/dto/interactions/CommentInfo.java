@@ -16,7 +16,7 @@ import java.time.Instant;
 public class CommentInfo {
 
     /**
-     * 用户ID，标识评论的发布者。
+     * 用户ID，评论发布者的唯一标识。
      */
     @JsonProperty("user_id")
     private Long userId;
@@ -28,7 +28,7 @@ public class CommentInfo {
     private String nickname;
 
     /**
-     * 用户头像URL，评论发布者的头像地址。
+     * 用户头像URL，评论发布者的头像地址（可为空）。
      */
     @JsonProperty("avatar_url")
     private String avatarUrl;
@@ -40,13 +40,13 @@ public class CommentInfo {
     private Long commentId;
 
     /**
-     * 帖子ID，标识评论所属的帖子。
+     * 帖子ID，标识评论所属的帖子（可为空）。
      */
     @JsonProperty("post_id")
     private Long postId;
 
     /**
-     * 父评论ID，用于回复功能，标识被回复的评论。
+     * 父评论ID，用于回复功能，标识被回复的评论（可为空）。
      */
     @JsonProperty("parent_id")
     private Long parentId;
