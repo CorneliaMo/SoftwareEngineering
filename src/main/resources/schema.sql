@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"email" VARCHAR(100) NULL DEFAULT NULL,
 	"nickname" VARCHAR(50) NOT NULL,
 	"avatar_url" VARCHAR(255) NULL DEFAULT NULL,
-	"status" SMALLINT NOT NULL DEFAULT 1,
+	"status" BOOLEAN NOT NULL DEFAULT true,
 	"created_time" TIMESTAMP NOT NULL,
 	"updated_time" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"comment_count" INTEGER NOT NULL DEFAULT 0,
@@ -34,16 +34,14 @@ CREATE TABLE IF NOT EXISTS "posts" (
 	"user_id" INTEGER NULL DEFAULT NULL,
 	"post_title" TEXT NOT NULL,
 	"post_text" TEXT NOT NULL,
-	"is_deleted" SMALLINT NOT NULL DEFAULT 0,
+	"is_deleted" BOOLEAN NOT NULL DEFAULT false,
 	"deleted_time" TIMESTAMP NULL DEFAULT NULL,
 	"created_time" TIMESTAMP NOT NULL,
 	"updated_time" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"rating_count" INTEGER NOT NULL DEFAULT 0,
 	"comment_count" INTEGER NOT NULL DEFAULT 0,
     "cover_media_id" INTEGER NULL DEFAULT NULL,
-	PRIMARY KEY ("post_id"),
-	CONSTRAINT "fk_posts_users" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT "FK_posts_post_media" FOREIGN KEY ("cover_media_id") REFERENCES "post_media" ("media_id") ON UPDATE CASCADE ON DELETE SET NULL
+	PRIMARY KEY ("post_id")
 )
 ;
 COMMENT ON TABLE "posts" IS '帖子表，储存用户发表的帖子';
@@ -69,8 +67,7 @@ CREATE TABLE IF NOT EXISTS "post_media" (
     "sort_order" SMALLINT NULL DEFAULT NULL,
 	PRIMARY KEY ("media_id"),
 	CONSTRAINT "fk_post_media_posts" FOREIGN KEY ("post_id") REFERENCES "posts" ("post_id") ON UPDATE CASCADE ON DELETE SET NULL,
-	CONSTRAINT "fk_post_media_users" FOREIGN KEY ("upload_user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL,
-	CONSTRAINT "ck_post_media_type" CHECK ((((media_type)::text = ANY ((ARRAY['image'::character varying, 'video'::character varying])::text[]))))
+	CONSTRAINT "fk_post_media_users" FOREIGN KEY ("upload_user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL
 )
 ;
 COMMENT ON TABLE "post_media" IS '帖子内容表，记录帖子对应媒体的信息列表';
@@ -83,13 +80,17 @@ COMMENT ON COLUMN "post_media"."sort_order" IS '指示媒体在帖子中的顺�
 CREATE INDEX IF NOT EXISTS "fk__post_media__posts" ON "post_media" ("post_id");
 CREATE INDEX IF NOT EXISTS "fk_post_media_users" ON "post_media" ("upload_user_id");
 
+ALTER TABLE "posts" DROP CONSTRAINT IF EXISTS "FK_posts_post_media";
+
+ALTER TABLE "posts" ADD CONSTRAINT "FK_posts_post_media" FOREIGN KEY ("cover_media_id") REFERENCES "post_media" ("media_id") ON UPDATE CASCADE ON DELETE SET NULL;
+
 CREATE TABLE IF NOT EXISTS "comments" (
 	"comment_id" SERIAL NOT NULL,
 	"post_id" INTEGER NULL DEFAULT NULL,
 	"user_id" INTEGER NULL DEFAULT NULL,
 	"parent_id" INTEGER NULL DEFAULT NULL,
 	"comment_text" TEXT NOT NULL,
-	"is_deleted" SMALLINT NOT NULL DEFAULT 0,
+	"is_deleted" BOOLEAN NOT NULL DEFAULT false,
 	"created_time" TIMESTAMP NOT NULL,
 	"updated_time" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY ("comment_id"),
@@ -167,7 +168,7 @@ CREATE TABLE IF NOT EXISTS "admins" (
 	"password" VARCHAR(255) NOT NULL,
 	"admin_name" VARCHAR(50) NULL DEFAULT NULL,
 	"role" VARCHAR(20) NOT NULL DEFAULT 'admin',
-	"status" INTEGER NOT NULL DEFAULT 1,
+	"status" BOOLEAN NOT NULL DEFAULT true,
 	"last_login" INTEGER NOT NULL,
 	"created_time" INTEGER NOT NULL,
 	PRIMARY KEY ("admin_id"),
