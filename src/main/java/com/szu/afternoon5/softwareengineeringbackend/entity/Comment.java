@@ -1,9 +1,8 @@
 package com.szu.afternoon5.softwareengineeringbackend.entity;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
@@ -13,10 +12,13 @@ import java.time.Instant;
  * 后续可添加楼层、点赞数、审核状态等字段，并结合软删除标记实现回收站能力。
  */
 @Data
-@Table(schema = "comments")
+@Entity
+@NoArgsConstructor
+@Table(name = "comments")
 public class Comment {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long commentId;
 
     private Long postId;

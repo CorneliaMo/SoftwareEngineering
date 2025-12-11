@@ -1,9 +1,8 @@
 package com.szu.afternoon5.softwareengineeringbackend.entity;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
@@ -13,10 +12,13 @@ import java.time.Instant;
  * 后续可增加封面、状态机（草稿/发布/隐藏）及 SEO 信息，并考虑为软删除添加恢复逻辑。
  */
 @Data
-@Table(schema = "posts")
+@Entity
+@NoArgsConstructor
+@Table(name = "posts")
 public class Post {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long postId;
 
     private Long userId;
@@ -37,6 +39,9 @@ public class Post {
 
     private Integer commentCount;
 
+    // 冗余字段，储存封面对应的postMediaId
+    private Long coverMediaId;
+
     /**
      * 创建帖子时的便捷构造器，初始化计数与时间戳。
      */
@@ -51,6 +56,21 @@ public class Post {
         this.updatedTime = Instant.now();
         this.ratingCount = 0;
         this.commentCount = 0;
+        this.coverMediaId = null;
+    }
+
+    public Post(Long postId, Long userId, String postTitle, String postText, Boolean isDeleted, Instant deletedTime, Instant createdTime, Instant updatedTime, Integer ratingCount, Integer commentCount, Long coverMediaId) {
+        this.postId = postId;
+        this.userId = userId;
+        this.postTitle = postTitle;
+        this.postText = postText;
+        this.isDeleted = isDeleted;
+        this.deletedTime = deletedTime;
+        this.createdTime = createdTime;
+        this.updatedTime = updatedTime;
+        this.ratingCount = ratingCount;
+        this.commentCount = commentCount;
+        this.coverMediaId = coverMediaId;
     }
 
     /**

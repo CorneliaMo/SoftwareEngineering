@@ -1,8 +1,8 @@
 package com.szu.afternoon5.softwareengineeringbackend.entity;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 帖子与标签的关联关系，支持多对多映射。
@@ -10,7 +10,10 @@ import lombok.Data;
  * 后续可根据业务需要增加排序权重或创建时间，便于统计与推荐。
  */
 @Data
-@Table(schema = "post_tags")
+@Entity
+@NoArgsConstructor
+@IdClass(PostTagId.class)
+@Table(name = "post_tags")
 public class PostTag {
 
     @Id
@@ -26,4 +29,5 @@ public class PostTag {
         this.postId = postId;
         this.tagId = tagId;
     }
+
 }
