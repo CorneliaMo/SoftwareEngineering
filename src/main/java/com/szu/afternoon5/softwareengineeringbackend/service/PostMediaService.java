@@ -8,6 +8,7 @@ import com.szu.afternoon5.softwareengineeringbackend.entity.PostMedia;
 import com.szu.afternoon5.softwareengineeringbackend.error.BusinessException;
 import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
 import com.szu.afternoon5.softwareengineeringbackend.repository.PostMediaRepository;
+import com.szu.afternoon5.softwareengineeringbackend.repository.PostRepository;
 import com.szu.afternoon5.softwareengineeringbackend.security.LoginPrincipal;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -33,11 +34,13 @@ public class PostMediaService {
     private static final DateTimeFormatter DATE_PATH_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private final OssService ossService;
+    private final PostRepository postRepository;
 
 
-    public PostMediaService(PostMediaRepository postMediaRepository, OssService ossService) {
+    public PostMediaService(PostMediaRepository postMediaRepository, OssService ossService, PostRepository postRepository) {
         this.postMediaRepository = postMediaRepository;
         this.ossService = ossService;
+        this.postRepository = postRepository;
     }
 
     // TODO：未来这里可以实现安全检查、图片视频预处理
@@ -135,13 +138,16 @@ public class PostMediaService {
             // 存在已被其他帖子引用的媒体
             throw new BusinessException(ErrorCode.CONFLICT, "附件已被其他帖子引用");
         } else {
-            // 批量设置postId，记录提交顺序并保存
-            int sortOrder = 0;
-            for (PostMedia postMedia : postMedias) {
-                postMedia.setSortOrder(sortOrder++);
-                postMedia.setPostId(postId);
+            if (!mediaIds.isEmpty()) {
+                // 批量设置postId，记录提交顺序并保存
+                int sortOrder = 0;
+                for (PostMedia postMedia : postMedias) {
+                    postMedia.setSortOrder(sortOrder++);
+                    postMedia.setPostId(postId);
+                }
+                postMediaRepository.saveAll(postMedias);
+                postRepository.updatePostCover(postId, mediaIds.get(0));
             }
-            postMediaRepository.saveAll(postMedias);
         }
     }
 

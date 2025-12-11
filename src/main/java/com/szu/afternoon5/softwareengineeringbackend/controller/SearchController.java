@@ -1,6 +1,7 @@
 package com.szu.afternoon5.softwareengineeringbackend.controller;
 
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostListResponse;
+import com.szu.afternoon5.softwareengineeringbackend.service.SearchService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,6 +18,12 @@ import java.time.LocalDate;
 @RequestMapping("/search")
 public class SearchController {
 
+    private final SearchService searchService;
+
+    public SearchController(SearchService searchService) {
+        this.searchService = searchService;
+    }
+
     /**
      * 按日期搜索帖子列表。
      *
@@ -28,12 +35,12 @@ public class SearchController {
      * @return 分页帖子摘要列表
      */
     @GetMapping("/date")
-    public PostListResponse searchByDate(@RequestParam(value = "start_date", required = false) LocalDate startDate,
-                                         @RequestParam(value = "end_date", required = false) LocalDate endDate,
+    public PostListResponse searchByDate(@RequestParam(value = "start_date") LocalDate startDate,
+                                         @RequestParam(value = "end_date") LocalDate endDate,
                                          @RequestParam(value = "user_id", required = false) Long userId,
-                                         @RequestParam(value = "current_page", required = false) Integer currentPage,
-                                         @RequestParam(value = "page_size", required = false) Integer pageSize) {
-        return null;
+                                         @RequestParam(value = "current_page") Integer currentPage,
+                                         @RequestParam(value = "page_size") Integer pageSize) {
+        return searchService.searchByDate(startDate, endDate, userId, currentPage, pageSize);
     }
 
     /**
@@ -46,27 +53,25 @@ public class SearchController {
      * @return 分页帖子摘要列表
      */
     @GetMapping("/tag")
-    public PostListResponse searchByTag(@RequestParam(value = "tag", required = false) String tag,
+    public PostListResponse searchByTag(@RequestParam(value = "tag") String tag,
                                         @RequestParam(value = "user_id", required = false) Long userId,
-                                        @RequestParam(value = "current_page", required = false) Integer currentPage,
-                                        @RequestParam(value = "page_size", required = false) Integer pageSize) {
-        return null;
+                                        @RequestParam(value = "current_page") Integer currentPage,
+                                        @RequestParam(value = "page_size") Integer pageSize) {
+        return searchService.searchByTag(tag, userId, currentPage, pageSize);
     }
 
     /**
      * 综合搜索帖子列表。
      *
      * @param keyword     关键词
-     * @param type        内容类型过滤
      * @param currentPage 当前页码
      * @param pageSize    每页数量
      * @return 分页帖子摘要列表
      */
     @GetMapping
-    public PostListResponse search(@RequestParam(value = "keyword", required = false) String keyword,
-                                   @RequestParam(value = "type", required = false) String type,
-                                   @RequestParam(value = "current_page", required = false) Integer currentPage,
-                                   @RequestParam(value = "page_size", required = false) Integer pageSize) {
-        return null;
+    public PostListResponse search(@RequestParam(value = "keyword") String keyword,
+                                   @RequestParam(value = "current_page") Integer currentPage,
+                                   @RequestParam(value = "page_size") Integer pageSize) {
+        return searchService.search(keyword, currentPage, pageSize);
     }
 }
