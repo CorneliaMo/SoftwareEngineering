@@ -16,9 +16,15 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 public class SubmitRatingResponse extends BaseResponse {
 
+    /**
+     * 平均评分，提交评分后重新计算的平均值。
+     */
     @JsonProperty("average_rating")
     private Double averageRating;
 
+    /**
+     * 评分总人数，更新后的参与评分用户数量。
+     */
     @JsonProperty("rating_count")
     private Integer ratingCount;
 

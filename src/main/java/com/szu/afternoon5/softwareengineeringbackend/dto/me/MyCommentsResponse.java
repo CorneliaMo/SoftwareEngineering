@@ -18,6 +18,9 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class MyCommentsResponse extends PageMeta {
 
+    /**
+     * 评论列表，包含当前页用户发布的所有评论信息。
+     */
     @JsonProperty("comments")
     private List<MyCommentsItem> comments;
 

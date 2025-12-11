@@ -18,6 +18,9 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class MyPostsResponse extends PageMeta {
 
+    /**
+     * 帖子列表，包含当前页用户发布的所有帖子及其封面信息。
+     */
     @JsonProperty("posts")
     private List<MyPostsItem> posts;
 

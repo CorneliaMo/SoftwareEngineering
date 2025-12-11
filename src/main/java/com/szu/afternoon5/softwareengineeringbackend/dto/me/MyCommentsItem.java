@@ -15,24 +15,45 @@ import java.time.Instant;
 @ToString(callSuper = true)
 public class MyCommentsItem {
 
+    /**
+     * 评论ID，唯一标识一条评论。
+     */
     @JsonProperty("comment_id")
     private Long commentId;
 
+    /**
+     * 帖子ID，标识评论所属的帖子。
+     */
     @JsonProperty("post_id")
     private Long postId;
 
+    /**
+     * 用户ID，发出评论的用户标识。
+     */
     @JsonProperty("user_id")
     private Long userId;
 
+    /**
+     * 父评论ID，用于回复功能，标识被回复的评论。
+     */
     @JsonProperty("parent_id")
     private Long parentId;
 
+    /**
+     * 评论内容，用户输入的评论文本。
+     */
     @JsonProperty("comment_text")
     private String commentText;
 
+    /**
+     * 创建时间，评论首次发布的时间戳。
+     */
     @JsonProperty("created_time")
     private Instant createdTime;
 
+    /**
+     * 更新时间，评论最后编辑的时间戳。
+     */
     @JsonProperty("updated_time")
     private Instant updatedTime;
 

@@ -15,9 +15,15 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class MyPostsItem {
 
+    /**
+     * 帖子摘要信息，包含帖子的基本元数据。
+     */
     @JsonProperty("post")
     private PostInfo post;
 
+    /**
+     * 封面媒体信息，帖子的封面图片或视频。
+     */
     @JsonProperty("cover")
     private MediaInfo cover;
 

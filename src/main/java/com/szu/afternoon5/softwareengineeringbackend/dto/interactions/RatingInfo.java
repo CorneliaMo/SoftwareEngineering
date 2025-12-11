@@ -13,12 +13,21 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class RatingInfo {
 
+    /**
+     * 平均评分，所有用户评分的平均值。
+     */
     @JsonProperty("average_rating")
     private Double averageRating;
 
+    /**
+     * 评分总人数，参与评分的用户数量。
+     */
     @JsonProperty("rating_count")
     private Integer ratingCount;
 
+    /**
+     * 当前用户评分，当前登录用户对该帖子的评分值。
+     */
     @JsonProperty("my_rating")
     private Integer myRating;
 

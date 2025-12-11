@@ -16,6 +16,9 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 public class SubmitCommentResponse extends BaseResponse {
 
+    /**
+     * 新创建的评论ID，用于标识刚发布的评论。
+     */
     @JsonProperty("comment_id")
     private Long commentId;
 
