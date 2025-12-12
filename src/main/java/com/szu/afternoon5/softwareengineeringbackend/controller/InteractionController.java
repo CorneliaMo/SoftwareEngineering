@@ -2,64 +2,84 @@ package com.szu.afternoon5.softwareengineeringbackend.controller;
 
 import com.szu.afternoon5.softwareengineeringbackend.dto.BaseResponse;
 import com.szu.afternoon5.softwareengineeringbackend.dto.interactions.*;
+import com.szu.afternoon5.softwareengineeringbackend.service.InteractionService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 用户互动相关接口控制器，涵盖点赞、收藏、评论等行为。
+ * 用户互动相关接口控制器，涵盖评分、评论等行为。
  * <p>
- * 后续可在此实现幂等的点赞接口、评论发布与删除、行为统计等能力，并结合实体模型完善参数校验。
+ * 提供评分的增删查、评论的增删查功能，并结合安全上下文进行权限校验。
  */
 @RestController
 @RequestMapping("/interactions")
 public class InteractionController {
 
+    private final InteractionService interactionService;
+
+    public InteractionController(InteractionService interactionService) {
+        this.interactionService = interactionService;
+    }
+
     /**
      * 获取评分信息。
      *
-     * @param postId 帖子标识
+     * @param postId         帖子标识
+     * @param authentication 认证信息
      * @return 评分统计信息，包含平均分、总人数及当前用户评分
      */
     @GetMapping("/rating/{post_id}")
-    public RatingInfo getRating(@PathVariable("post_id") Long postId) {
-        return null;
+    @PreAuthorize("isAuthenticated()")
+    public RatingInfo getRating(@PathVariable("post_id") Long postId, Authentication authentication) {
+        return interactionService.getRating(postId, authentication);
     }
 
     /**
      * 提交评分。
      *
-     * @param postId  帖子标识
-     * @param request 评分提交请求
+     * @param postId         帖子标识
+     * @param request        评分提交请求
+     * @param authentication 认证信息
      * @return 操作结果，包含更新后的评分统计
      */
     @PostMapping("/rating/{post_id}")
-    public BaseResponse submitRating(@PathVariable("post_id") Long postId,
-                                     @Valid @RequestBody SubmitRatingRequest request) {
-        return null;
+    @PreAuthorize("isAuthenticated()")
+    public SubmitRatingResponse submitRating(@PathVariable("post_id") Long postId,
+                                             @Valid @RequestBody SubmitRatingRequest request,
+                                             Authentication authentication) {
+        return interactionService.submitRating(postId, request, authentication);
     }
 
     /**
      * 删除评分。
      *
-     * @param postId 帖子标识
+     * @param postId         帖子标识
+     * @param authentication 认证信息
      * @return 操作结果
      */
     @DeleteMapping("/rating/{post_id}")
-    public BaseResponse deleteRating(@PathVariable("post_id") Long postId) {
-        return null;
+    @PreAuthorize("isAuthenticated()")
+    public BaseResponse deleteRating(@PathVariable("post_id") Long postId, Authentication authentication) {
+        interactionService.deleteRating(postId, authentication);
+        return new BaseResponse();
     }
 
     /**
      * 发表评论。
      *
-     * @param postId  帖子标识
-     * @param request 评论提交请求
+     * @param postId         帖子标识
+     * @param request        评论提交请求
+     * @param authentication 认证信息
      * @return 操作结果，包含新评论的标识
      */
     @PostMapping("/comments/{post_id}")
-    public BaseResponse submitComment(@PathVariable("post_id") Long postId,
-                                      @Valid @RequestBody SubmitCommentRequest request) {
-        return null;
+    @PreAuthorize("isAuthenticated()")
+    public SubmitCommentResponse submitComment(@PathVariable("post_id") Long postId,
+                                               @Valid @RequestBody SubmitCommentRequest request,
+                                               Authentication authentication) {
+        return interactionService.submitComment(postId, request, authentication);
     }
 
     /**
@@ -74,19 +94,23 @@ public class InteractionController {
     public CommentListResponse getComments(@PathVariable("post_id") Long postId,
                                            @RequestParam(value = "current_page", defaultValue = "1") Integer currentPage,
                                            @RequestParam(value = "page_size", defaultValue = "10") Integer pageSize) {
-        return null;
+        return interactionService.getComments(postId, currentPage, pageSize);
     }
 
     /**
      * 删除评论。
      *
-     * @param postId  帖子标识
-     * @param request 评论删除请求
+     * @param postId         帖子标识
+     * @param request        评论删除请求
+     * @param authentication 认证信息
      * @return 操作结果
      */
     @DeleteMapping("/comments/{post_id}")
+    @PreAuthorize("isAuthenticated()")
     public BaseResponse deleteComment(@PathVariable("post_id") Long postId,
-                                      @Valid @RequestBody DeleteCommentRequest request) {
-        return null;
+                                      @Valid @RequestBody DeleteCommentRequest request,
+                                      Authentication authentication) {
+        interactionService.deleteComment(postId, request, authentication);
+        return new BaseResponse();
     }
 }

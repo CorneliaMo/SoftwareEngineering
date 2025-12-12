@@ -28,6 +28,7 @@ import java.util.Optional;
  */
 @Service
 public class InteractionService {
+
     private final RatingRepository ratingRepository;
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
@@ -59,27 +60,27 @@ public class InteractionService {
         if (!postRepository.existsById(postId)) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "帖子不存在");
         }
-        
+
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
         if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        
+
         // 使用Repository的查询方法获取平均评分和数量
         Object[] ratingStats = ratingRepository.findAverageRatingAndCountByPostId(postId);
-        Double averageRating = ratingStats != null && ratingStats[0] != null ? 
-            ((Number) ratingStats[0]).doubleValue() : 0.0;
-        Long ratingCount = ratingStats != null && ratingStats[1] != null ? 
-            ((Number) ratingStats[1]).longValue() : 0L;
-        
+        Double averageRating = ratingStats != null && ratingStats[0] != null ?
+                ((Number) ratingStats[0]).doubleValue() : 0.0;
+        Long ratingCount = ratingStats != null && ratingStats[1] != null ?
+                ((Number) ratingStats[1]).longValue() : 0L;
+
         // 获取当前用户评分
         Optional<Rating> userRating = ratingRepository.findByPostIdAndUserId(postId, loginPrincipal.getUserId());
         Integer myRating = userRating.map(Rating::getRatingValue).orElse(0);
-        
+
         return new RatingInfo(
-            averageRating,
-            ratingCount.intValue(),
-            myRating
+                averageRating,
+                ratingCount.intValue(),
+                myRating
         );
     }
 
@@ -92,22 +93,22 @@ public class InteractionService {
      * @return 提交后的评分统计信息
      */
     @Transactional
-    public RatingResponse submitRating(Long postId, @Valid SubmitRatingRequest request, 
-                                      Authentication authentication) {
+    public SubmitRatingResponse submitRating(Long postId, @Valid SubmitRatingRequest request,
+                                             Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
         if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        
+
         // 检查帖子是否存在
         if (!postRepository.existsById(postId)) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "帖子不存在");
         }
-        
+
         // 检查用户是否已评分
         Optional<Rating> existingRating = ratingRepository.findByPostIdAndUserId(
-            postId, loginPrincipal.getUserId());
-        
+                postId, loginPrincipal.getUserId());
+
         Rating rating;
         if (existingRating.isPresent()) {
             // 更新现有评分
@@ -117,24 +118,24 @@ public class InteractionService {
         } else {
             // 创建新评分
             rating = new Rating(
-                postId,
-                loginPrincipal.getUserId(),
-                request.getRating()
+                    postId,
+                    loginPrincipal.getUserId(),
+                    request.getRating()
             );
         }
-        
+
         ratingRepository.save(rating);
-        
+
         // 重新计算统计信息
         Object[] ratingStats = ratingRepository.findAverageRatingAndCountByPostId(postId);
-        Double averageRating = ratingStats != null && ratingStats[0] != null ? 
-            ((Number) ratingStats[0]).doubleValue() : 0.0;
-        Long ratingCount = ratingStats != null && ratingStats[1] != null ? 
-            ((Number) ratingStats[1]).longValue() : 0L;
-        
-        return new RatingResponse(
-            averageRating,
-            ratingCount.intValue()
+        Double averageRating = ratingStats != null && ratingStats[0] != null ?
+                ((Number) ratingStats[0]).doubleValue() : 0.0;
+        Long ratingCount = ratingStats != null && ratingStats[1] != null ?
+                ((Number) ratingStats[1]).longValue() : 0L;
+
+        return new SubmitRatingResponse(
+                averageRating,
+                ratingCount.intValue()
         );
     }
 
@@ -150,12 +151,12 @@ public class InteractionService {
         if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        
+
         // 检查帖子是否存在
         if (!postRepository.existsById(postId)) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "帖子不存在");
         }
-        
+
         // 删除用户的评分
         Optional<Rating> userRating = ratingRepository.findByPostIdAndUserId(postId, loginPrincipal.getUserId());
         if (userRating.isPresent()) {
@@ -173,36 +174,36 @@ public class InteractionService {
      * @return 新创建的评论ID
      */
     @Transactional
-    public CommentSubmitResponse submitComment(Long postId, @Valid SubmitCommentRequest request,
-                                              Authentication authentication) {
+    public SubmitCommentResponse submitComment(Long postId, @Valid SubmitCommentRequest request,
+                                               Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
         if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        
+
         // 检查帖子是否存在
         if (!postRepository.existsById(postId)) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "帖子不存在");
         }
-        
+
         // 创建新评论
         Comment comment = new Comment(
-            postId,
-            loginPrincipal.getUserId(),
-            null, // 父评论ID，暂时不支持回复功能
-            request.getCommentText()
+                postId,
+                loginPrincipal.getUserId(),
+                null, // 父评论ID，暂时不支持回复功能
+                request.getCommentText()
         );
-        
+
         Comment savedComment = commentRepository.save(comment);
-        return new CommentSubmitResponse(savedComment.getCommentId());
+        return new SubmitCommentResponse(savedComment.getCommentId());
     }
 
     /**
      * 获取帖子的评论列表，支持分页。
      *
-     * @param postId         帖子ID
-     * @param currentPage    当前页码
-     * @param pageSize       每页数量
+     * @param postId      帖子ID
+     * @param currentPage 当前页码
+     * @param pageSize    每页数量
      * @return 评论分页列表
      */
     public CommentListResponse getComments(Long postId, Integer currentPage, Integer pageSize) {
@@ -210,37 +211,37 @@ public class InteractionService {
         if (!postRepository.existsById(postId)) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "帖子不存在");
         }
-        
+
         Pageable pageable = pageableUtils.buildPageable(
-            List.of("createdTime"), currentPage, pageSize, "createdTime", "DESC");
-        
+                List.of("createdTime"), currentPage - 1, pageSize, "createdTime", "DESC");
+
         Page<Comment> commentPage = commentRepository.findByPostIdAndIsDeletedFalse(postId, pageable);
-        
+
         // 转换Comment实体为CommentInfo DTO
         List<CommentInfo> commentInfos = commentPage.getContent().stream()
-            .map(comment -> {
-                // 获取用户信息
-                var user = userRepository.findByUserId(comment.getUserId()).orElse(null);
-                return new CommentInfo(
-                    comment.getUserId(),
-                    user != null ? user.getNickname() : "未知用户",
-                    user != null ? user.getAvatarUrl() : null,
-                    comment.getCommentId(),
-                    comment.getPostId(),
-                    comment.getParentId(),
-                    comment.getCommentText(),
-                    comment.getCreatedTime(),
-                    comment.getUpdatedTime()
-                );
-            })
-            .toList();
-        
+                .map(comment -> {
+                    // 获取用户信息
+                    var user = userRepository.findByUserId(comment.getUserId()).orElse(null);
+                    return new CommentInfo(
+                            comment.getUserId(),
+                            user != null ? user.getNickname() : "未知用户",
+                            user != null ? user.getAvatarUrl() : null,
+                            comment.getCommentId(),
+                            comment.getPostId(),
+                            comment.getParentId(),
+                            comment.getCommentText(),
+                            comment.getCreatedTime(),
+                            comment.getUpdatedTime()
+                    );
+                })
+                .toList();
+
         return new CommentListResponse(
-            commentPage.getTotalPages(),
-            (int) commentPage.getTotalElements(),
-            commentPage.getNumber() + 1,
-            commentPage.getSize(),
-            commentInfos
+                commentPage.getTotalPages(),
+                (int) commentPage.getTotalElements(),
+                commentPage.getNumber() + 1,
+                commentPage.getSize(),
+                commentInfos
         );
     }
 
@@ -252,25 +253,25 @@ public class InteractionService {
      * @param authentication 认证信息
      */
     @Transactional
-    public void deleteComment(Long postId, @Valid DeleteCommentRequest request, 
-                             Authentication authentication) {
+    public void deleteComment(Long postId, @Valid DeleteCommentRequest request,
+                              Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
         if (loginPrincipal == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        
+
         Optional<Comment> commentOptional = commentRepository.findById(request.getCommentId());
         if (commentOptional.isEmpty()) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "评论不存在");
         }
-        
+
         Comment comment = commentOptional.get();
-        
+
         // 检查评论是否属于该帖子
         if (!comment.getPostId().equals(postId)) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED, "评论不属于该帖子");
         }
-        
+
         // 检查权限：评论作者或管理员可以删除
         boolean hasPermission = false;
         if (loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
@@ -278,7 +279,7 @@ public class InteractionService {
         } else if (loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.admin)) {
             hasPermission = true;
         }
-        
+
         if (hasPermission) {
             comment.setIsDeleted(true);
             comment.setUpdatedTime(Instant.now());

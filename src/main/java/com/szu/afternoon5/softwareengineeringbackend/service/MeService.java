@@ -31,6 +31,7 @@ import java.util.Optional;
  */
 @Service
 public class MeService {
+
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
@@ -54,9 +55,9 @@ public class MeService {
      * 获取当前登录用户的详细信息。
      *
      * @param authentication 认证信息
-     * @return 用户详细信息
+     * @return 用户详细信息响应
      */
-    public UserDetail getUserInfo(Authentication authentication) {
+    public UserInfoResponse getUserInfo(Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
         if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
@@ -66,17 +67,8 @@ public class MeService {
                 throw new BusinessException(ErrorCode.NOT_FOUND, "用户不存在");
             } else {
                 User user = userOptional.get();
-                return new UserDetail(
-                    user.getUserId(),
-                    user.getUsername(),
-                    user.getEmail(),
-                    user.getNickname(),
-                    user.getAvatarUrl(),
-                    user.getCreatedTime(),
-                    user.getPostCount(),
-                    user.getRatingCount(),
-                    user.getCommentCount()
-                );
+                UserDetail userDetail = new UserDetail(user);
+                return new UserInfoResponse(userDetail);
             }
         }
     }
@@ -86,10 +78,10 @@ public class MeService {
      *
      * @param request        更新请求
      * @param authentication 认证信息
-     * @return 更新后的用户详细信息
+     * @return 更新后的用户详细信息响应
      */
     @Transactional
-    public UserDetail updateUserInfo(@Valid UpdateUserInfoRequest request, Authentication authentication) {
+    public UserInfoResponse updateUserInfo(@Valid UpdateUserInfoRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
         if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
@@ -99,39 +91,30 @@ public class MeService {
                 throw new BusinessException(ErrorCode.NOT_FOUND, "用户不存在");
             } else {
                 User user = userOptional.get();
-                
+
                 // 检查用户名是否重复（如果要修改用户名）
-                if (request.getUsername() != null && !request.getUsername().isEmpty() && 
-                    !request.getUsername().equals(user.getUsername())) {
+                if (request.getUsername() != null && !request.getUsername().isEmpty() &&
+                        !request.getUsername().equals(user.getUsername())) {
                     if (userRepository.existsByUsername(request.getUsername())) {
                         throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "用户名已被占用");
                     }
                     user.setUsername(request.getUsername());
                 }
-                
+
                 // 更新昵称
                 if (request.getNickname() != null && !request.getNickname().isEmpty()) {
                     user.setNickname(request.getNickname());
                 }
-                
+
                 // 更新头像
                 if (request.getAvatarUrl() != null) {
                     user.setAvatarUrl(request.getAvatarUrl());
                 }
-                
+
                 user.setUpdatedTime(Instant.now());
                 User updatedUser = userRepository.save(user);
-                return new UserDetail(
-                    updatedUser.getUserId(),
-                    updatedUser.getUsername(),
-                    updatedUser.getEmail(),
-                    updatedUser.getNickname(),
-                    updatedUser.getAvatarUrl(),
-                    updatedUser.getCreatedTime(),
-                    updatedUser.getPostCount(),
-                    updatedUser.getRatingCount(),
-                    updatedUser.getCommentCount()
-                );
+                UserDetail userDetail = new UserDetail(updatedUser);
+                return new UserInfoResponse(userDetail);
             }
         }
     }
@@ -150,46 +133,35 @@ public class MeService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         } else {
             List<String> sortColumns = List.of("postTitle", "createdTime", "updatedTime", "ratingCount", "commentCount");
-            Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage, pageSize, "createdTime", "DESC");
-            
-            // 注意：这里使用false表示查询未删除的帖子
+            Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "createdTime", "DESC");
+
+            // 查询未删除的帖子
             Page<Post> postPage = postRepository.findByUserIdAndIsDeleted(loginPrincipal.getUserId(), false, pageable);
-            
+
             List<MyPostsItem> posts = postPage.getContent().stream()
-                .map(post -> {
-                    MediaInfo coverMedia = null;
-                    // 获取封面媒体
-                    if (post.getCoverMediaId() != null) {
-                        var media = postMediaRepository.findById(post.getCoverMediaId()).orElse(null);
-                        if (media != null) {
-                            coverMedia = new MediaInfo(
-                                media.getMediaId(),
-                                media.getMediaUrl(),
-                                media.getMediaType().toString()
-                            );
+                    .map(post -> {
+                        MediaInfo coverMedia = null;
+                        // 获取封面媒体
+                        if (post.getCoverMediaId() != null) {
+                            var media = postMediaRepository.findById(post.getCoverMediaId()).orElse(null);
+                            if (media != null) {
+                                coverMedia = new MediaInfo(media);
+                            }
                         }
-                    }
-                    
-                    return new MyPostsItem(
-                        new PostInfo(
-                            post.getPostId(),
-                            post.getUserId(),
-                            post.getPostTitle(),
-                            post.getUpdatedTime(),
-                            post.getRatingCount(),
-                            post.getCommentCount()
-                        ),
-                        coverMedia
-                    );
-                })
-                .toList();
-            
+
+                        return new MyPostsItem(
+                                new PostInfo(post),
+                                coverMedia
+                        );
+                    })
+                    .toList();
+
             return new MyPostsResponse(
-                postPage.getTotalPages(),
-                (int) postPage.getTotalElements(),
-                postPage.getNumber() + 1,
-                postPage.getSize(),
-                posts
+                    postPage.getTotalPages(),
+                    (int) postPage.getTotalElements(),
+                    postPage.getNumber() + 1,
+                    postPage.getSize(),
+                    posts
             );
         }
     }
@@ -210,31 +182,31 @@ public class MeService {
             // 设置默认分页参数
             int actualPage = currentPage != null ? currentPage : 1;
             int actualSize = pageSize != null ? pageSize : 10;
-            
+
             Pageable pageable = pageableUtils.buildPageable(
-                List.of("createdTime"), actualPage, actualSize, "createdTime", "DESC");
-            
+                    List.of("createdTime"), actualPage - 1, actualSize, "createdTime", "DESC");
+
             Page<Comment> commentPage = commentRepository.findByUserIdAndIsDeletedFalse(
-                loginPrincipal.getUserId(), pageable);
-            
+                    loginPrincipal.getUserId(), pageable);
+
             List<MyCommentsItem> comments = commentPage.getContent().stream()
-                .map(comment -> new MyCommentsItem(
-                    comment.getCommentId(),
-                    comment.getPostId(),
-                    comment.getUserId(),
-                    comment.getParentId(),
-                    comment.getCommentText(),
-                    comment.getCreatedTime(),
-                    comment.getUpdatedTime()
-                ))
-                .toList();
-            
+                    .map(comment -> new MyCommentsItem(
+                            comment.getCommentId(),
+                            comment.getPostId(),
+                            comment.getUserId(),
+                            comment.getParentId(),
+                            comment.getCommentText(),
+                            comment.getCreatedTime(),
+                            comment.getUpdatedTime()
+                    ))
+                    .toList();
+
             return new MyCommentsResponse(
-                commentPage.getTotalPages(),
-                (int) commentPage.getTotalElements(),
-                commentPage.getNumber() + 1,
-                commentPage.getSize(),
-                comments
+                    commentPage.getTotalPages(),
+                    (int) commentPage.getTotalElements(),
+                    commentPage.getNumber() + 1,
+                    commentPage.getSize(),
+                    comments
             );
         }
     }
