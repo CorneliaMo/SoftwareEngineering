@@ -3,6 +3,16 @@
 # =========================
 FROM eclipse-temurin:17-jdk-alpine AS build
 
+# 可选的代理参数（名字跟常见环境变量对齐）
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
+# 如果传进来了就设成环境变量，没传就是空，不影响
+ENV HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    NO_PROXY=${NO_PROXY}
+
 WORKDIR /app
 
 # 先拷贝 Gradle 包装器和配置，加快缓存命中
