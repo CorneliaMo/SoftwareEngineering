@@ -68,10 +68,16 @@ public class InteractionService {
 
         // 使用Repository的查询方法获取平均评分和数量
         Object[] ratingStats = ratingRepository.findAverageRatingAndCountByPostId(postId);
-        Double averageRating = ratingStats != null && ratingStats[0] != null ?
-                ((Number) ratingStats[0]).doubleValue() : 0.0;
-        Long ratingCount = ratingStats != null && ratingStats[1] != null ?
-                ((Number) ratingStats[1]).longValue() : 0L;
+        Double averageRating = 0.0;
+        Long ratingCount = 0L;
+        if (ratingStats != null && ratingStats.length >= 2) {
+            if (ratingStats[0] != null) {
+                averageRating = ((Number) ratingStats[0]).doubleValue();
+            }
+            if (ratingStats[1] != null) {
+                ratingCount = ((Number) ratingStats[1]).longValue();
+            }
+        }
 
         // 获取当前用户评分
         Optional<Rating> userRating = ratingRepository.findByPostIdAndUserId(postId, loginPrincipal.getUserId());
@@ -128,10 +134,16 @@ public class InteractionService {
 
         // 重新计算统计信息
         Object[] ratingStats = ratingRepository.findAverageRatingAndCountByPostId(postId);
-        Double averageRating = ratingStats != null && ratingStats[0] != null ?
-                ((Number) ratingStats[0]).doubleValue() : 0.0;
-        Long ratingCount = ratingStats != null && ratingStats[1] != null ?
-                ((Number) ratingStats[1]).longValue() : 0L;
+        Double averageRating = 0.0;
+        Long ratingCount = 0L;
+        if (ratingStats != null && ratingStats.length >= 2) {
+            if (ratingStats[0] != null) {
+                averageRating = ((Number) ratingStats[0]).doubleValue();
+            }
+            if (ratingStats[1] != null) {
+                ratingCount = ((Number) ratingStats[1]).longValue();
+            }
+        }
 
         return new SubmitRatingResponse(
                 averageRating,
