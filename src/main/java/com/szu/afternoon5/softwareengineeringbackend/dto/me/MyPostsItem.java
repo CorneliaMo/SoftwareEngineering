@@ -3,6 +3,7 @@ package com.szu.afternoon5.softwareengineeringbackend.dto.me;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.MediaInfo;
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostInfo;
+import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -30,5 +31,10 @@ public class MyPostsItem {
     public MyPostsItem(PostInfo post, MediaInfo cover) {
         this.post = post;
         this.cover = cover;
+    }
+
+    public MyPostsItem(PostWithCover postWithCover) {
+        this.post = new PostInfo(postWithCover.getPost());
+        this.cover = new MediaInfo(postWithCover.getPostMedia());
     }
 }

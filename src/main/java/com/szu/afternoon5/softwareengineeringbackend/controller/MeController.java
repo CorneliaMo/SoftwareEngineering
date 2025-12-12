@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/me")
+@PreAuthorize("@perm.isUser(authentication.principal)")
 public class MeController {
 
     private final MeService meService;
@@ -29,7 +30,6 @@ public class MeController {
      * @return 当前用户的详细信息
      */
     @GetMapping("/info")
-    @PreAuthorize("isAuthenticated()")
     public UserInfoResponse getUserInfo(Authentication authentication) {
         return meService.getUserInfo(authentication);
     }
@@ -42,7 +42,6 @@ public class MeController {
      * @return 更新后的用户信息
      */
     @PutMapping("/info")
-    @PreAuthorize("isAuthenticated()")
     public UserInfoResponse updateUserInfo(@Valid @RequestBody UpdateUserInfoRequest request,
                                            Authentication authentication) {
         return meService.updateUserInfo(request, authentication);
@@ -57,7 +56,6 @@ public class MeController {
      * @return 当前用户发布的分页帖子列表
      */
     @GetMapping("/posts")
-    @PreAuthorize("isAuthenticated()")
     public MyPostsResponse getMyPosts(@RequestParam(value = "current_page", defaultValue = "1") Integer currentPage,
                                       @RequestParam(value = "page_size", defaultValue = "10") Integer pageSize,
                                       Authentication authentication) {
@@ -73,7 +71,6 @@ public class MeController {
      * @return 当前用户发布的分页评论列表
      */
     @GetMapping("/comments")
-    @PreAuthorize("isAuthenticated()")
     public MyCommentsResponse getMyComments(@RequestParam(value = "current_page", required = false) Integer currentPage,
                                             @RequestParam(value = "page_size", required = false) Integer pageSize,
                                             Authentication authentication) {

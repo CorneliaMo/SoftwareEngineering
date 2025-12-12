@@ -2,15 +2,12 @@ package com.szu.afternoon5.softwareengineeringbackend.service;
 
 import com.szu.afternoon5.softwareengineeringbackend.dto.auth.UserDetail;
 import com.szu.afternoon5.softwareengineeringbackend.dto.me.*;
-import com.szu.afternoon5.softwareengineeringbackend.dto.posts.MediaInfo;
-import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostInfo;
+import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover;
 import com.szu.afternoon5.softwareengineeringbackend.entity.Comment;
-import com.szu.afternoon5.softwareengineeringbackend.entity.Post;
 import com.szu.afternoon5.softwareengineeringbackend.entity.User;
 import com.szu.afternoon5.softwareengineeringbackend.error.BusinessException;
 import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
 import com.szu.afternoon5.softwareengineeringbackend.repository.CommentRepository;
-import com.szu.afternoon5.softwareengineeringbackend.repository.PostMediaRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.PostRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.UserRepository;
 import com.szu.afternoon5.softwareengineeringbackend.security.LoginPrincipal;
@@ -35,19 +32,16 @@ public class MeService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
-    private final PostMediaRepository postMediaRepository;
     private final PageableUtils pageableUtils;
 
     /**
      * 构造个人中心服务，注入所需仓储与工具。
      */
     public MeService(UserRepository userRepository, PostRepository postRepository,
-                     CommentRepository commentRepository, PostMediaRepository postMediaRepository,
-                     PageableUtils pageableUtils) {
+                     CommentRepository commentRepository, PageableUtils pageableUtils) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
-        this.postMediaRepository = postMediaRepository;
         this.pageableUtils = pageableUtils;
     }
 
@@ -136,25 +130,9 @@ public class MeService {
             Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "createdTime", "DESC");
 
             // 查询未删除的帖子
-            Page<Post> postPage = postRepository.findByUserIdAndIsDeleted(loginPrincipal.getUserId(), false, pageable);
+            Page<PostWithCover> postPage = postRepository.findByUserIdAndIsDeleted(loginPrincipal.getUserId(), false, pageable);
 
-            List<MyPostsItem> posts = postPage.getContent().stream()
-                    .map(post -> {
-                        MediaInfo coverMedia = null;
-                        // 获取封面媒体
-                        if (post.getCoverMediaId() != null) {
-                            var media = postMediaRepository.findById(post.getCoverMediaId()).orElse(null);
-                            if (media != null) {
-                                coverMedia = new MediaInfo(media);
-                            }
-                        }
-
-                        return new MyPostsItem(
-                                new PostInfo(post),
-                                coverMedia
-                        );
-                    })
-                    .toList();
+            List<MyPostsItem> posts = postPage.getContent().stream().map(MyPostsItem::new).toList();
 
             return new MyPostsResponse(
                     postPage.getTotalPages(),
@@ -183,8 +161,10 @@ public class MeService {
             int actualPage = currentPage != null ? currentPage : 1;
             int actualSize = pageSize != null ? pageSize : 10;
 
+            // TODO：前端提供排序参数
+            List<String> sortColumns = List.of("created_time", "post_id");
             Pageable pageable = pageableUtils.buildPageable(
-                    List.of("createdTime"), actualPage - 1, actualSize, "createdTime", "DESC");
+                    sortColumns, actualPage - 1, actualSize, "created_time", "DESC");
 
             Page<Comment> commentPage = commentRepository.findByUserIdAndIsDeletedFalse(
                     loginPrincipal.getUserId(), pageable);
