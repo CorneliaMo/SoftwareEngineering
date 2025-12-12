@@ -43,7 +43,7 @@ public class JwtUtils {
             if (adminId != null) claims.put("admin_id", adminId);
             claims.put("login_type", loginType);
         } else {
-            throw new JwtException("Invalid login information.");
+            throw new JwtException("Invalid userLogin information.");
         }
 
         Date exp = Objects.requireNonNullElseGet(expiration, () -> new Date(System.currentTimeMillis() + EXPIRATION));

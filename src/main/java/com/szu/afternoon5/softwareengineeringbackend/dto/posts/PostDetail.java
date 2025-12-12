@@ -10,12 +10,12 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
 /**
- * 帖子摘要信息，用于列表场景。
+ * 帖子详细信息，包含正文内容与时间字段。
  */
 @Getter
 @Setter
 @ToString(callSuper = true)
-public class PostInfo {
+public class PostDetail {
 
     @JsonProperty("post_id")
     private Long postId;
@@ -26,6 +26,12 @@ public class PostInfo {
     @JsonProperty("post_title")
     private String postTitle;
 
+    @JsonProperty("post_text")
+    private String postText;
+
+    @JsonProperty("created_time")
+    private OffsetDateTime createdTime;
+
     @JsonProperty("updated_time")
     private OffsetDateTime updatedTime;
 
@@ -35,10 +41,12 @@ public class PostInfo {
     @JsonProperty("comment_count")
     private Integer commentCount;
 
-    public PostInfo(Post post) {
+    public PostDetail(Post post) {
         this.postId = post.getPostId();
         this.userId = post.getUserId();
         this.postTitle = post.getPostTitle();
+        this.postText = post.getPostText();
+        this.createdTime = post.getCreatedTime().atZone(ZoneId.systemDefault()).toOffsetDateTime();
         this.updatedTime = post.getUpdatedTime().atZone(ZoneId.systemDefault()).toOffsetDateTime();
         this.ratingCount = post.getRatingCount();
         this.commentCount = post.getCommentCount();
