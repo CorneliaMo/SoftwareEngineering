@@ -49,6 +49,45 @@ public class InteractionService {
     }
 
     /**
+     * 从Repository查询结果中解析评分统计信息。
+     * 处理JPQL查询返回的嵌套数组结构。
+     *
+     * @param ratingStats Repository查询返回的原始结果
+     * @return 包含平均评分和评分人数的数组，[0]为平均评分，[1]为评分人数
+     */
+    private Number[] parseRatingStats(Object[] ratingStats) {
+        Double averageRating = 0.0;
+        Long ratingCount = 0L;
+
+        if (ratingStats != null && ratingStats.length > 0) {
+            // 检查是否为嵌套数组（查询返回的是Object[][]结构）
+            if (ratingStats[0] instanceof Object[]) {
+                Object[] row = (Object[]) ratingStats[0];
+                if (row.length >= 2) {
+                    if (row[0] != null) {
+                        averageRating = ((Number) row[0]).doubleValue();
+                    }
+                    if (row[1] != null) {
+                        ratingCount = ((Number) row[1]).longValue();
+                    }
+                }
+            } else {
+                // 直接是Object[]结构的情况
+                if (ratingStats.length >= 2) {
+                    if (ratingStats[0] != null) {
+                        averageRating = ((Number) ratingStats[0]).doubleValue();
+                    }
+                    if (ratingStats[1] != null) {
+                        ratingCount = ((Number) ratingStats[1]).longValue();
+                    }
+                }
+            }
+        }
+
+        return new Number[]{averageRating, ratingCount};
+    }
+
+    /**
      * 获取帖子评分信息，包括平均分、总评分人数和当前用户评分。
      *
      * @param postId         帖子ID
@@ -68,16 +107,9 @@ public class InteractionService {
 
         // 使用Repository的查询方法获取平均评分和数量
         Object[] ratingStats = ratingRepository.findAverageRatingAndCountByPostId(postId);
-        Double averageRating = 0.0;
-        Long ratingCount = 0L;
-        if (ratingStats != null && ratingStats.length >= 2) {
-            if (ratingStats[0] != null) {
-                averageRating = ((Number) ratingStats[0]).doubleValue();
-            }
-            if (ratingStats[1] != null) {
-                ratingCount = ((Number) ratingStats[1]).longValue();
-            }
-        }
+        Number[] parsedStats = parseRatingStats(ratingStats);
+        Double averageRating = parsedStats[0].doubleValue();
+        Long ratingCount = parsedStats[1].longValue();
 
         // 获取当前用户评分
         Optional<Rating> userRating = ratingRepository.findByPostIdAndUserId(postId, loginPrincipal.getUserId());
@@ -134,16 +166,9 @@ public class InteractionService {
 
         // 重新计算统计信息
         Object[] ratingStats = ratingRepository.findAverageRatingAndCountByPostId(postId);
-        Double averageRating = 0.0;
-        Long ratingCount = 0L;
-        if (ratingStats != null && ratingStats.length >= 2) {
-            if (ratingStats[0] != null) {
-                averageRating = ((Number) ratingStats[0]).doubleValue();
-            }
-            if (ratingStats[1] != null) {
-                ratingCount = ((Number) ratingStats[1]).longValue();
-            }
-        }
+        Number[] parsedStats = parseRatingStats(ratingStats);
+        Double averageRating = parsedStats[0].doubleValue();
+        Long ratingCount = parsedStats[1].longValue();
 
         return new SubmitRatingResponse(
                 averageRating,
