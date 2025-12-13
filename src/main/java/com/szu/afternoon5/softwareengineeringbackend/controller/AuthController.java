@@ -1,5 +1,19 @@
 package com.szu.afternoon5.softwareengineeringbackend.controller;
 
+import com.szu.afternoon5.softwareengineeringbackend.dto.BaseResponse;
+import com.szu.afternoon5.softwareengineeringbackend.dto.auth.AdminAuthResponse;
+import com.szu.afternoon5.softwareengineeringbackend.dto.auth.AdminLoginRequest;
+import com.szu.afternoon5.softwareengineeringbackend.dto.auth.LoginRequest;
+import com.szu.afternoon5.softwareengineeringbackend.dto.auth.RegisterRequest;
+import com.szu.afternoon5.softwareengineeringbackend.dto.auth.ResetPasswordRequest;
+import com.szu.afternoon5.softwareengineeringbackend.dto.auth.UserAuthResponse;
+import com.szu.afternoon5.softwareengineeringbackend.service.UserService;
+import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,4 +25,55 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
+
+    private final UserService userService;
+
+    public AuthController(UserService userService) {
+        this.userService = userService;
+    }
+
+    /**
+     * 用户账密注册。
+     *
+     * @param request 注册请求体
+     * @return 注册结果，包含用户信息与签发的 JWT
+     */
+    @PostMapping("/register")
+    public UserAuthResponse register(@Valid @RequestBody RegisterRequest request) {
+        return userService.register(request);
+    }
+
+    /**
+     * 用户账密登录。
+     *
+     * @param request 登录请求体
+     * @return 登录结果，包含用户信息与签发的 JWT
+     */
+    @PostMapping("/login")
+    public UserAuthResponse login(@Valid @RequestBody LoginRequest request) {
+        return userService.userLogin(request);
+    }
+
+    /**
+     * 用户修改密码。
+     *
+     * @param request 密码修改请求体
+     */
+    @PutMapping("/reset-password")
+    @PreAuthorize("isAuthenticated()")
+    public BaseResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request, Authentication authentication) {
+        userService.resetPassword(request, authentication);
+        return new BaseResponse();
+    }
+
+    /**
+     * 管理员账密登录。
+     *
+     * @param request 管理员登录请求体
+     * @return 登录结果，包含管理员信息与签发的 JWT
+     */
+    @PostMapping("/admin-login")
+    public AdminAuthResponse adminLogin(@Valid @RequestBody AdminLoginRequest request) {
+        return userService.adminLogin(request);
+    }
 }

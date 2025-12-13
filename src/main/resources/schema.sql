@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS "posts" (
 	"rating_count" INTEGER NOT NULL DEFAULT 0,
 	"comment_count" INTEGER NOT NULL DEFAULT 0,
     "cover_media_id" INTEGER NULL DEFAULT NULL,
+    "text_query"   tsvector,
 	PRIMARY KEY ("post_id")
 )
 ;
@@ -57,6 +58,8 @@ COMMENT ON COLUMN "posts"."rating_count" IS '评分数量';
 COMMENT ON COLUMN "posts"."comment_count" IS '评论数量';
 COMMENT ON COLUMN "posts"."cover_media_id" IS '冗余字段，储存封面对应的postMediaId';
 CREATE INDEX IF NOT EXISTS "fk__posts__users" ON "posts" ("user_id");
+-- 创建GIN索引需要在数据库中以postgres用户执行 CREATE EXTENSION pg_trgm;
+CREATE INDEX IF NOT EXISTS "idx_posts_text_query" ON "posts" USING gin ("text_query");
 
 CREATE TABLE IF NOT EXISTS "post_media" (
 	"media_id" SERIAL NOT NULL,
@@ -64,6 +67,7 @@ CREATE TABLE IF NOT EXISTS "post_media" (
 	"upload_user_id" INTEGER NULL DEFAULT NULL,
 	"media_url" VARCHAR(255) NOT NULL,
 	"media_type" VARCHAR(10) NOT NULL,
+    "sort_order" SMALLINT NULL DEFAULT NULL,
 	PRIMARY KEY ("media_id"),
 	CONSTRAINT "fk_post_media_posts" FOREIGN KEY ("post_id") REFERENCES "posts" ("post_id") ON UPDATE CASCADE ON DELETE SET NULL,
 	CONSTRAINT "fk_post_media_users" FOREIGN KEY ("upload_user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL
@@ -75,6 +79,7 @@ COMMENT ON COLUMN "post_media"."post_id" IS '对应帖子id';
 COMMENT ON COLUMN "post_media"."upload_user_id" IS '上传用户id';
 COMMENT ON COLUMN "post_media"."media_url" IS '媒体url';
 COMMENT ON COLUMN "post_media"."media_type" IS '媒体类型';
+COMMENT ON COLUMN "post_media"."sort_order" IS '指示媒体在帖子中的顺序';
 CREATE INDEX IF NOT EXISTS "fk__post_media__posts" ON "post_media" ("post_id");
 CREATE INDEX IF NOT EXISTS "fk_post_media_users" ON "post_media" ("upload_user_id");
 

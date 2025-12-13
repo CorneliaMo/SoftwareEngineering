@@ -7,15 +7,21 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * 媒体文件信息，描述资源标识、类型与访问地址。
+ * 帖子媒体资源信息，覆盖媒体标识、归属与类型。
  */
 @Getter
 @Setter
 @ToString(callSuper = true)
-public class MediaInfo {
+public class PostMediaItem {
 
     @JsonProperty("media_id")
     private Long mediaId;
+
+    @JsonProperty("post_id")
+    private Long postId;
+
+    @JsonProperty("upload_user_id")
+    private Long uploadUserId;
 
     @JsonProperty("media_url")
     private String mediaUrl;
@@ -23,8 +29,10 @@ public class MediaInfo {
     @JsonProperty("media_type")
     private PostMedia.MediaType mediaType;
 
-    public MediaInfo(PostMedia postMedia) {
+    public PostMediaItem(PostMedia postMedia) {
         this.mediaId = postMedia.getMediaId();
+        this.postId = postMedia.getPostId();
+        this.uploadUserId = postMedia.getUploadUserId();
         this.mediaUrl = postMedia.getMediaUrl();
         this.mediaType = postMedia.getMediaType();
     }

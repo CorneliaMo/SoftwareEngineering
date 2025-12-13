@@ -54,18 +54,4 @@ public class UserDetail {
         this.ratingCount = user.getRatingCount();
         this.commentCount = user.getCommentCount();
     }
-
-    public UserDetail(Long userId, String username, String email, String nickname,
-                      String avatarUrl, Instant createdTime, Integer postCount,
-                      Integer ratingCount, Integer commentCount) {
-        this.userId = userId;
-        this.username = username;
-        this.email = email;
-        this.nickname = nickname;
-        this.avatarUrl = avatarUrl;
-        this.createdTime = createdTime;
-        this.postCount = postCount;
-        this.ratingCount = ratingCount;
-        this.commentCount = commentCount;
-    }
 }
