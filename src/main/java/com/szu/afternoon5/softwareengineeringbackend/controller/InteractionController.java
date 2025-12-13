@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/interactions")
+@PreAuthorize("@perm.isUser(authentication.principal)")
 public class InteractionController {
 
     private final InteractionService interactionService;
@@ -31,7 +32,6 @@ public class InteractionController {
      * @return 评分统计信息，包含平均分、总人数及当前用户评分
      */
     @GetMapping("/rating/{post_id}")
-    @PreAuthorize("isAuthenticated()")
     public RatingInfo getRating(@PathVariable("post_id") Long postId, Authentication authentication) {
         return interactionService.getRating(postId, authentication);
     }
@@ -45,7 +45,6 @@ public class InteractionController {
      * @return 操作结果，包含更新后的评分统计
      */
     @PostMapping("/rating/{post_id}")
-    @PreAuthorize("isAuthenticated()")
     public SubmitRatingResponse submitRating(@PathVariable("post_id") Long postId,
                                              @Valid @RequestBody SubmitRatingRequest request,
                                              Authentication authentication) {
@@ -60,7 +59,6 @@ public class InteractionController {
      * @return 操作结果
      */
     @DeleteMapping("/rating/{post_id}")
-    @PreAuthorize("isAuthenticated()")
     public BaseResponse deleteRating(@PathVariable("post_id") Long postId, Authentication authentication) {
         interactionService.deleteRating(postId, authentication);
         return new BaseResponse();
@@ -75,7 +73,6 @@ public class InteractionController {
      * @return 操作结果，包含新评论的标识
      */
     @PostMapping("/comments/{post_id}")
-    @PreAuthorize("isAuthenticated()")
     public SubmitCommentResponse submitComment(@PathVariable("post_id") Long postId,
                                                @Valid @RequestBody SubmitCommentRequest request,
                                                Authentication authentication) {
@@ -106,7 +103,7 @@ public class InteractionController {
      * @return 操作结果
      */
     @DeleteMapping("/comments/{post_id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("@perm.isUser(authentication.principal) || @perm.isAdmin(authentication.principal)")
     public BaseResponse deleteComment(@PathVariable("post_id") Long postId,
                                       @Valid @RequestBody DeleteCommentRequest request,
                                       Authentication authentication) {

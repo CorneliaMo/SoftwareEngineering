@@ -177,4 +177,11 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     WHERE p.postId = :postId
     """)
     void updatePostCover(Long postId, Long coverMediaId);
+
+    @Query("""
+    SELECT p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder FROM Post p
+    LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
+    WHERE p.userId = :userId AND p.isDeleted = FALSE
+""")
+    Page<PostWithCover> findByUserIdAndIsDeleted(Long userId, boolean isDeleted, Pageable pageable);
 }
