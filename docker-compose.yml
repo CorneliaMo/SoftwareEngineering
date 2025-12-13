@@ -25,7 +25,13 @@ services:
 
   # --- 2. 后端服务 ---
   backend:
-    build: .
+    build:
+      context: .
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
+        GRADLE_OPTS: ${GRADLE_OPTS}
     container_name: software-engineering-5-backend
     ports:
       - "18080:8080"

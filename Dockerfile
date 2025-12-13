@@ -7,11 +7,14 @@ FROM eclipse-temurin:17-jdk-alpine AS build
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
 ARG NO_PROXY
+# 为GRADLE设置代理以及其他构建参数
+ARG GRADLE_OPTS
 
 # 如果传进来了就设成环境变量，没传就是空，不影响
 ENV HTTP_PROXY=${HTTP_PROXY} \
     HTTPS_PROXY=${HTTPS_PROXY} \
-    NO_PROXY=${NO_PROXY}
+    NO_PROXY=${NO_PROXY} \
+    GRADLE_OPTS=${GRADLE_OPTS}
 
 WORKDIR /app
 
@@ -44,19 +47,13 @@ FROM eclipse-temurin:17-jre-alpine AS runtime
 WORKDIR /app
 
 # 从构建阶段拷贝打包好的 jar
-# 注意：如果你的 jar 名字固定，可以改成具体名字，比如 my-app.jar
 COPY --from=build /app/build/libs/*.jar /app/app.jar
-
-# 拷贝启动脚本，用来读取 .env + 处理外部 yml
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
 
 # 暴露 Spring Boot 默认端口
 EXPOSE 8080
 
 # 预留 JVM 参数、Spring 额外配置目录
 ENV JAVA_OPTS=""
-ENV SPRING_CONFIG_ADDITIONAL_LOCATION="file:/config/"
 
 # 用脚本作为入口
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
