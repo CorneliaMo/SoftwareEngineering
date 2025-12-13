@@ -19,7 +19,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
      * 查询用户的帖子并携带封面媒体信息，支持分页。
      */
     @Query(value = """
-    SELECT p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder FROM Post p
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
     LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
     WHERE p.userId = :userId AND p.isDeleted = :isDeleted
 """)
@@ -122,7 +122,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     );
 
     @Query("""
-        SELECT p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder FROM Post p
+        SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
         LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
         WHERE p.isDeleted = false
           AND p.createdTime >= :start
@@ -135,7 +135,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
                                  Pageable pageable);
 
     @Query("""
-        SELECT p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder FROM Post p
+        SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
         JOIN PostTag pt ON p.postId = pt.postId
         JOIN Tag t ON pt.tagId = t.tagId
         LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
@@ -177,4 +177,11 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     WHERE p.postId = :postId
     """)
     void updatePostCover(Long postId, Long coverMediaId);
+
+    @Query("""
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
+    LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
+    WHERE p.userId = :userId AND p.isDeleted = FALSE
+""")
+    Page<PostWithCover> findByUserIdAndIsDeleted(Long userId, boolean isDeleted, Pageable pageable);
 }

@@ -4,11 +4,13 @@ import com.szu.afternoon5.softwareengineeringbackend.entity.Post;
 import com.szu.afternoon5.softwareengineeringbackend.entity.PostMedia;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class PostWithCover {
 
     private Long postId;
