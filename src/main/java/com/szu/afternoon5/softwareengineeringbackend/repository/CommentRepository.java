@@ -13,7 +13,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      * 根据帖子ID查询未删除的评论列表，支持分页。
      */
     @Query(value = """
-    SELECT c.userId, u.nickname, u.avatarUrl, c.commentId, c.postId, c.parentId, c.commentText, c.createdTime, c.updatedTime FROM Comment c
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.CommentInfo(c.userId, u.nickname, u.avatarUrl, c.commentId, c.postId, c.parentId, c.commentText, c.createdTime, c.updatedTime) FROM Comment c
     JOIN User u ON c.userId = u.userId
     WHERE c.postId = :postId AND c.isDeleted = FALSE
 """)

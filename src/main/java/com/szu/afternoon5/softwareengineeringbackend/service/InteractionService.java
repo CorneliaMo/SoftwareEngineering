@@ -8,7 +8,6 @@ import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
 import com.szu.afternoon5.softwareengineeringbackend.repository.CommentRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.PostRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.RatingRepository;
-import com.szu.afternoon5.softwareengineeringbackend.repository.UserRepository;
 import com.szu.afternoon5.softwareengineeringbackend.security.LoginPrincipal;
 import com.szu.afternoon5.softwareengineeringbackend.utils.PageableUtils;
 import jakarta.transaction.Transactional;
@@ -66,7 +65,7 @@ public class InteractionService {
 
         return new RatingInfo(
                 ratingStats.getAverageRating(),
-                ratingStats.getRatingCount(),
+                Math.toIntExact(ratingStats.getRatingCount()),
                 myRating
         );
     }
@@ -111,7 +110,7 @@ public class InteractionService {
 
         return new SubmitRatingResponse(
                 ratingStats.getAverageRating(),
-                ratingStats.getRatingCount()
+                Math.toIntExact(ratingStats.getRatingCount())
         );
     }
 
