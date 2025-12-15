@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS "posts" (
 	"rating_count" INTEGER NOT NULL DEFAULT 0,
 	"comment_count" INTEGER NOT NULL DEFAULT 0,
     "cover_media_id" INTEGER NULL DEFAULT NULL,
+    "text_query"   tsvector,
 	PRIMARY KEY ("post_id")
 )
 ;
@@ -57,6 +58,8 @@ COMMENT ON COLUMN "posts"."rating_count" IS '评分数量';
 COMMENT ON COLUMN "posts"."comment_count" IS '评论数量';
 COMMENT ON COLUMN "posts"."cover_media_id" IS '冗余字段，储存封面对应的postMediaId';
 CREATE INDEX IF NOT EXISTS "fk__posts__users" ON "posts" ("user_id");
+-- 创建GIN索引需要在数据库中以postgres用户执行 CREATE EXTENSION pg_trgm;
+CREATE INDEX IF NOT EXISTS "idx_posts_text_query" ON "posts" USING gin ("text_query");
 
 CREATE TABLE IF NOT EXISTS "post_media" (
 	"media_id" SERIAL NOT NULL,

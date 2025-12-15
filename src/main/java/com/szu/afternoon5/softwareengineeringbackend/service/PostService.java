@@ -8,6 +8,7 @@ import com.szu.afternoon5.softwareengineeringbackend.repository.PostRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.UserRepository;
 import com.szu.afternoon5.softwareengineeringbackend.security.LoginPrincipal;
 import com.szu.afternoon5.softwareengineeringbackend.utils.PageableUtils;
+import com.szu.afternoon5.softwareengineeringbackend.utils.SearchTextUtil;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -30,13 +31,15 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final PageableUtils pageableUtils;
+    private final JiebaService jiebaService;
 
-    public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils) {
+    public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils, JiebaService jiebaService) {
         this.tagService = tagService;
         this.postMediaService = postMediaService;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.pageableUtils = pageableUtils;
+        this.jiebaService = jiebaService;
     }
 
     /**
@@ -52,12 +55,29 @@ public class PostService {
         if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         } else {
-            // 先写入post获取自增id postId
             Post post = new Post(loginPrincipal.getUserId(), request.getPostTitle(), request.getPostText());
-            Post postSaved = postRepository.save(post);
+            List<String> titleSegment = jiebaService.cutForIndex(post.getPostTitle());
+            List<String> textSegment = jiebaService.cutForIndex(post.getPostText());
+
+            // 先写入post获取自增id postId
+            Long newPostId = postRepository.insertPostWithIndex(
+                    post.getUserId(),
+                    post.getPostTitle(),
+                    post.getPostText(),
+                    post.getIsDeleted(),
+                    post.getDeletedTime(),
+                    post.getCreatedTime(),
+                    post.getUpdatedTime(),
+                    post.getRatingCount(),
+                    post.getCommentCount(),
+                    post.getCoverMediaId(),
+                    SearchTextUtil.joinTokens(titleSegment),
+                    SearchTextUtil.joinTokens(textSegment)
+            );
+            post.setPostId(newPostId);
             // 通过postId绑定相应tag和media
-            tagService.bindTagsToPost(postSaved.getPostId(), request.getTags());
-            postMediaService.bindMediaToPost(postSaved.getPostId(), request.getMediaIds());
+            tagService.bindTagsToPost(newPostId, request.getTags());
+            postMediaService.bindMediaToPost(newPostId, request.getMediaIds());
             return new PublishPostResponse(new PostInfo(post));
         }
     }
@@ -75,7 +95,7 @@ public class PostService {
             List<String> sortColumns = List.of("post_title", "created_time", "updated_time", "rating_count", "comment_count");
 
             // TODO：当前默认按帖子创建时间倒序排列，后续可以让前端自定义排序
-            Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage, pageSize, "created_time", "DESC");
+            Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "created_time", "DESC");
             Page<PostWithCover> postWithCoverPage = postRepository.findByUserIdAndIsDeletedWithCover(userId, false, pageable);
 
             return new PostListResponse(
@@ -133,8 +153,27 @@ public class PostService {
                     if (postUpdateContent.getPostText() != null && !postUpdateContent.getPostText().isEmpty()) {
                         post.setPostText(postUpdateContent.getPostText());
                     }
+
+                    // 更新分词索引
+                    List<String> titleSegment = jiebaService.cutForIndex(post.getPostTitle());
+                    List<String> textSegment = jiebaService.cutForIndex(post.getPostText());
+
+                    postRepository.updatePostWithIndex(
+                            post.getPostId(),
+                            post.getUserId(),
+                            post.getPostTitle(),
+                            post.getPostText(),
+                            post.getIsDeleted(),
+                            post.getDeletedTime(),
+                            post.getCreatedTime(),
+                            post.getUpdatedTime(),
+                            post.getRatingCount(),
+                            post.getCommentCount(),
+                            post.getCoverMediaId(),
+                            SearchTextUtil.joinTokens(titleSegment),
+                            SearchTextUtil.joinTokens(textSegment)
+                    );
                     // 在保存基础信息后同步更新标签
-                    postRepository.save(post);
                     tagService.updatePostTags(post.getPostId(), request.getTags());
                 } else {
                     throw new BusinessException(ErrorCode.FORBIDDEN, "只有帖子作者或管理员可以修改");

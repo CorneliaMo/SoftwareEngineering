@@ -2,21 +2,52 @@ package com.szu.afternoon5.softwareengineeringbackend.dto.posts;
 
 import com.szu.afternoon5.softwareengineeringbackend.entity.Post;
 import com.szu.afternoon5.softwareengineeringbackend.entity.PostMedia;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class PostWithCover {
 
-    private Post post;
+    private Long postId;
 
-    private PostMedia postMedia;
+    private Long userId;
 
-    // 提供给Spring Data JPA的映射构造器
-    public PostWithCover(Long postId, Long userId, String postTitle, String postText, Boolean isDeleted, Instant deletedTime, Instant createdTime, Instant updatedTime, Integer ratingCount, Integer commentCount, Long coverMediaId, Long uploadUserId, String mediaUrl, PostMedia.MediaType mediaType, Integer sortOrder) {
-        this.post = new Post(postId, userId, postTitle, postText, isDeleted, deletedTime, createdTime, updatedTime, ratingCount, commentCount, coverMediaId);
-        this.postMedia = new  PostMedia(coverMediaId, uploadUserId, mediaUrl, mediaType, sortOrder);
+    private String postTitle;
+
+    private String postText;
+
+    private Boolean isDeleted;
+
+    private Instant deletedTime;
+
+    private Instant createdTime;
+
+    private Instant updatedTime;
+
+    private Integer ratingCount;
+
+    private Integer commentCount;
+
+    private Long coverMediaId;
+
+    private Long uploadUserId;
+
+    private String mediaUrl;
+
+    private PostMedia.MediaType mediaType;
+
+    private Integer sortOrder;
+
+    public Post getPost() {
+        return new Post(postId, userId, postTitle, postText, isDeleted, deletedTime, createdTime, updatedTime, ratingCount, commentCount, coverMediaId);
     }
 
+    public PostMedia getPostMedia() {
+        return new PostMedia(coverMediaId, uploadUserId, mediaUrl, mediaType, sortOrder);
+    }
 }
