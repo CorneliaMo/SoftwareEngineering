@@ -184,4 +184,21 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     WHERE p.userId = :userId AND p.isDeleted = FALSE
 """)
     Page<PostWithCover> findByUserIdAndIsDeleted(Long userId, boolean isDeleted, Pageable pageable);
+
+    /**
+     * 根据用户ID查询帖子（用于管理端），支持分页
+     * 新增方法：实现按用户ID筛选帖子功能
+     */
+    @Query("""
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
+    LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
+    WHERE p.userId = :userId
+""")
+    Page<PostWithCover> findByUserIdWithCover(Long userId, Pageable pageable);
+
+    @Query("""
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
+    LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
+""")
+    Page<PostWithCover> findAllWithCover(Pageable pageable);
 }

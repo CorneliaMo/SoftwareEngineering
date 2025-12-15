@@ -172,8 +172,8 @@ CREATE TABLE IF NOT EXISTS "admins" (
 	"admin_name" VARCHAR(50) NULL DEFAULT NULL,
 	"role" VARCHAR(20) NOT NULL DEFAULT 'admin',
 	"status" BOOLEAN NOT NULL DEFAULT true,
-	"last_login" INTEGER NOT NULL,
-	"created_time" INTEGER NOT NULL,
+	"last_login" TIMESTAMP NULL,
+	"created_time" TIMESTAMP NOT NULL,
 	PRIMARY KEY ("admin_id"),
 	CONSTRAINT "fk_admins_users" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL
 )

@@ -1,6 +1,10 @@
+// 需要在 UserRepository.java 中添加的方法：
+
 package com.szu.afternoon5.softwareengineeringbackend.repository;
 
 import com.szu.afternoon5.softwareengineeringbackend.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -25,4 +29,10 @@ public interface UserRepository extends JpaRepository<User,Long> {
      * 判断指定用户 ID 是否存在。
      */
     boolean existsByUserId(Long userId);
+
+    /**
+     * 根据昵称搜索用户（模糊搜索），支持分页
+     * 新增方法：实现用户搜索功能
+     */
+    Page<User> findByNicknameContainingIgnoreCase(String nickname, Pageable pageable);
 }
