@@ -76,7 +76,7 @@ public class PostController {
     @GetMapping
     public PostListResponse getPostList(@RequestParam("current_page") Integer currentPage,
                                         @RequestParam("page_size") Integer pageSize,
-                                        @RequestParam(value = "user_id") Long userId) {
+                                        @RequestParam(value = "user_id", required = false) Long userId) {
         return postService.getPostList(currentPage, pageSize, userId);
     }
 

@@ -91,7 +91,7 @@ public class PostService {
      * @return 帖子列表及分页信息
      */
     public PostListResponse getPostList(Integer currentPage, Integer pageSize, Long userId) {
-        if (userRepository.existsByUserId(userId)) {
+        if (userId == null || userRepository.existsByUserId(userId)) {
             List<String> sortColumns = List.of("post_title", "created_time", "updated_time", "rating_count", "comment_count");
 
             // TODO：当前默认按帖子创建时间倒序排列，后续可以让前端自定义排序
