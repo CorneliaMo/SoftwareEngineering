@@ -14,7 +14,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      * 联接Rating表获取评论用户对该帖子的评分。
      */
     @Query(value = """
-    SELECT c.userId, u.nickname, u.avatarUrl, c.commentId, c.postId, c.parentId, c.commentText, c.createdTime, c.updatedTime, r.ratingValue FROM Comment c
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.CommentInfo(c.userId, u.nickname, u.avatarUrl, c.commentId, c.postId, c.parentId, c.commentText, c.createdTime, c.updatedTime, r.ratingValue) FROM Comment c
     JOIN User u ON c.userId = u.userId
     LEFT JOIN Rating r ON c.postId = r.postId AND c.userId = r.userId
     WHERE c.postId = :postId AND c.isDeleted = FALSE

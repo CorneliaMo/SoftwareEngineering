@@ -19,6 +19,6 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
      *
      * @return Object[] 数组，第一个元素为平均评分，第二个元素为评分人数
      */
-    @Query("SELECT AVG(r.ratingValue) AS average_rating, COUNT(r) AS rating_count FROM Rating r WHERE r.postId = :postId")
+    @Query("SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.FindAverageRatingResult(AVG(r.ratingValue), COUNT(r)) FROM Rating r WHERE r.postId = :postId")
     FindAverageRatingResult findAverageRatingAndCountByPostId(Long postId);
 }

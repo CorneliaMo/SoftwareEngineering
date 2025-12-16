@@ -9,6 +9,6 @@ public class FindAverageRatingResult {
 
     private Double averageRating;
 
-    private Integer ratingCount;
+    private Long ratingCount;
 
 }
