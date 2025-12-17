@@ -11,10 +11,12 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     /**
      * 根据帖子ID查询未删除的评论列表，支持分页。
+     * 联接Rating表获取评论用户对该帖子的评分。
      */
     @Query(value = """
-    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.CommentInfo(c.userId, u.nickname, u.avatarUrl, c.commentId, c.postId, c.parentId, c.commentText, c.createdTime, c.updatedTime) FROM Comment c
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.CommentInfo(c.userId, u.nickname, u.avatarUrl, c.commentId, c.postId, c.parentId, c.commentText, c.createdTime, c.updatedTime, r.ratingValue) FROM Comment c
     JOIN User u ON c.userId = u.userId
+    LEFT JOIN Rating r ON c.postId = r.postId AND c.userId = r.userId
     WHERE c.postId = :postId AND c.isDeleted = FALSE
 """)
     Page<CommentInfo> findCommentInfoByPostIdAndIsDeletedFalse(Long postId, Pageable pageable);
