@@ -21,7 +21,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     @Query(value = """
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
     LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
-    WHERE p.userId = :userId AND p.isDeleted = :isDeleted
+    WHERE (:userId IS NULL OR p.userId = :userId) AND p.isDeleted = :isDeleted
 """)
     Page<PostWithCover> findByUserIdAndIsDeletedWithCover(Long userId, boolean isDeleted, Pageable pageable);
 

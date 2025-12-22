@@ -36,3 +36,7 @@ out/
 ### VS Code ###
 .vscode/
 /.env
+
+### Docker things ###
+/pg_data
+/backend_logs

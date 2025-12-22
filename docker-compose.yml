@@ -2,17 +2,19 @@ version: '3.8'
 
 services:
   # --- 1. 数据库 & 缓存 ---
-#  postgres:
-#    image: postgres:latest
-#    container_name: software-engineering-5-postgres
-#    environment:
-#      POSTGRES_PASSWORD: ${DB_PASSWORD}
-#      TZ: Asia/Shanghai
-#    volumes:
-#      - ./pg_data:/var/lib/postgresql
-#    networks:
-#      - software-engineering-net
-#    restart: always
+  postgres:
+    image: postgres:latest
+    container_name: software-engineering-5-postgres
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Shanghai
+    ports:
+      - "33306:5432"
+    volumes:
+      - ./pg_data:/var/lib/postgresql
+    networks:
+      - software-engineering-net
+    restart: always
 
 #  redis:
 #    image: redis:latest
@@ -42,8 +44,8 @@ services:
     volumes:
       # 把容器内的 logs 目录映射到宿主机的 ./logs 目录
       - ./backend_logs:/app/logs
-#    depends_on:
-#      - postgres
+    depends_on:
+      - postgres
 #      - redis
     networks:
       - software-engineering-net

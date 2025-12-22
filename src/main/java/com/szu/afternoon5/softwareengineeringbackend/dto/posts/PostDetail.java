@@ -8,6 +8,7 @@ import lombok.ToString;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 /**
  * 帖子详细信息，包含正文内容与时间字段。
@@ -41,7 +42,10 @@ public class PostDetail {
     @JsonProperty("comment_count")
     private Integer commentCount;
 
-    public PostDetail(Post post) {
+    @JsonProperty("tags")
+    private List<TagInfo> tags;
+
+    public PostDetail(Post post, List<TagInfo> tags) {
         this.postId = post.getPostId();
         this.userId = post.getUserId();
         this.postTitle = post.getPostTitle();
@@ -50,5 +54,6 @@ public class PostDetail {
         this.updatedTime = post.getUpdatedTime().atZone(ZoneId.systemDefault()).toOffsetDateTime();
         this.ratingCount = post.getRatingCount();
         this.commentCount = post.getCommentCount();
+        this.tags = tags;
     }
 }
