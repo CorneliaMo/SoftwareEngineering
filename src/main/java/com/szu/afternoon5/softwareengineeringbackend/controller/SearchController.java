@@ -63,15 +63,21 @@ public class SearchController {
     /**
      * 综合搜索帖子列表。
      *
-     * @param keyword     关键词
+     * @param keyword 可选，关键词
+     * @param startDate 可选，最早发布日期（包含）
+     * @param endDate 最晚发布日期（包含）
+     * @param userId 可选，用户Id
      * @param currentPage 当前页码
      * @param pageSize    每页数量
-     * @return 分页帖子摘要列表
+     * @return 分页帖子摘要列表，默认按发布时间倒序返回
      */
     @GetMapping
-    public PostListResponse search(@RequestParam(value = "keyword") String keyword,
+    public PostListResponse search(@RequestParam(value = "keyword", required = false) String keyword,
+                                   @RequestParam(value = "start_date", required = false) LocalDate startDate,
+                                   @RequestParam(value = "end_date", required = false) LocalDate endDate,
+                                   @RequestParam(value = "user_id", required = false) Long userId,
                                    @RequestParam(value = "current_page") Integer currentPage,
                                    @RequestParam(value = "page_size") Integer pageSize) {
-        return searchService.search(keyword, currentPage, pageSize);
+        return searchService.search(keyword, startDate, endDate, userId, currentPage, pageSize);
     }
 }

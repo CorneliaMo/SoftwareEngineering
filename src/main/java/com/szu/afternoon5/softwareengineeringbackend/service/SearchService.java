@@ -8,6 +8,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -91,25 +92,26 @@ public class SearchService {
      *
      * @param keyword  搜索关键字（原始字符串）
      */
-    public PostListResponse search(String keyword,
-                                   Integer currentPage,
-                                   Integer pageSize) {
+    public PostListResponse search(String keyword, LocalDate startDate, LocalDate endDate, Long userId, Integer currentPage, Integer pageSize) {
 
         Pageable pageable = PageRequest.of(
                 Math.max(currentPage - 1, 0),
                 Math.max(pageSize, 5)
         );
 
-        // 1. 用 jieba 做搜索模式分词
-        String queryText = buildFullTextQuery(keyword);
-
-        // fix：处理分词可能产生的空值
-        if (queryText == null) {
-            return new PostListResponse(0, 0, 1, pageSize, List.of());
-        } else {
-            // 2. 调用 Postgres 全文检索
-            Page<PostWithCoverForNative> postWithCoverPage = postRepository.searchFullText(queryText, pageable);
-
+        if (keyword.isBlank()) {
+            // 未指定关键词，采用一般搜索
+            // TODO：当前默认按帖子创建时间倒序排列，后续可以让前端自定义排序
+            pageable = buildPostPageRequest(
+                    Math.max(0, currentPage - 1),
+                    Math.max(5, pageSize),
+                    "created_time",
+                    "DESC");
+            Page<PostWithCover> postWithCoverPage = postRepository.findAllWithCoverByOptionalStartDateEndDateUserId(
+                    userId,
+                    startDate == null?null:startDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
+                    endDate == null?null:endDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
+                    pageable);
             return new PostListResponse(
                     postWithCoverPage.getTotalPages(),
                     (int) postWithCoverPage.getTotalElements(),
@@ -119,6 +121,32 @@ public class SearchService {
                             new PostSummaryItem(new PostInfo(postWithCover.getPost()), new MediaInfo(postWithCover.getPostMedia()))
                     ).toList()
             );
+        } else {
+            // 指定关键词，采用分词搜索
+            // 1. 用 jieba 做搜索模式分词
+            String queryText = buildFullTextQuery(keyword);
+
+            // fix：处理分词可能产生的空值
+            if (queryText == null) {
+                return new PostListResponse(0, 0, 1, pageSize, List.of());
+            } else {
+                // 2. 调用 Postgres 全文检索
+                Page<PostWithCoverForNative> postWithCoverPage = postRepository.searchFullText(queryText,
+                        startDate == null?null:startDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
+                        endDate == null?null:endDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
+                        userId,
+                        pageable);
+
+                return new PostListResponse(
+                        postWithCoverPage.getTotalPages(),
+                        (int) postWithCoverPage.getTotalElements(),
+                        postWithCoverPage.getNumber() + 1,
+                        postWithCoverPage.getSize(),
+                        postWithCoverPage.stream().map(postWithCover ->
+                                new PostSummaryItem(new PostInfo(postWithCover.getPost()), new MediaInfo(postWithCover.getPostMedia()))
+                        ).toList()
+                );
+            }
         }
     }
 

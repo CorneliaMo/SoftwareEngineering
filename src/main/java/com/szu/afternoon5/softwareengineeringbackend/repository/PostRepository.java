@@ -159,6 +159,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
             SELECT p.post_id, p.user_id, p.post_title, p.post_text, p.is_deleted, p.deleted_time, p.created_time, p.updated_time, p.rating_count, p.comment_count, p.cover_media_id, pm.upload_user_id, pm.media_url, pm.media_type, pm.sort_order, p.has_image, p.has_video FROM posts p
             LEFT JOIN post_media pm ON p.cover_media_id = pm.media_id
             WHERE p.is_deleted = FALSE
+              AND (CAST(:startDate AS timestamp) IS NULL OR p.created_time >= :startDate)
+              AND (CAST(:endDate AS timestamp) IS NULL OR p.created_time <= :endDate)
+              AND (:userId IS NULL OR p.user_id = :userId)
               AND p.text_query @@ plainto_tsquery('simple', :queryText)
             ORDER BY
               ts_rank_cd(p.text_query, plainto_tsquery('simple', :queryText)),
@@ -168,6 +171,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
             SELECT COUNT(*)
             FROM posts p
             WHERE p.is_deleted = FALSE
+              AND (CAST(:startDate AS timestamp) IS NULL OR p.created_time >= :startDate)
+              AND (CAST(:endDate AS timestamp) IS NULL OR p.created_time <= :endDate)
+              AND (:userId IS NULL OR p.user_id = :userId)
               AND (
                     :queryText IS NULL
                     OR p.text_query @@ plainto_tsquery('simple', :queryText)
@@ -176,6 +182,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
             nativeQuery = true
     )
     Page<PostWithCoverForNative> searchFullText(@Param("queryText") String queryText,
+                                                @Param("startDate") Instant startDate,
+                                                @Param("endDate") Instant endDate,
+                                                @Param("userId") Long userId,
                                                 Pageable pageable);
 
     @Modifying
@@ -206,4 +215,13 @@ public interface PostRepository extends JpaRepository<Post,Long> {
         AND (:hasVideo IS NULL OR p.hasVideo = :hasVideo)
 """)
     Page<PostWithCover> findAllWithCoverByOptionalUserIdUsernameNicknamePostType(Pageable pageable, Long userId, String username, String nickname, Boolean hasImage, Boolean hasVideo);
+
+    @Query("""
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
+    LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
+    WHERE (:userId IS NULL OR p.userId = :userId)
+        AND (CAST(:startDate AS timestamp) IS NULL OR p.createdTime >= :startDate)
+        AND (CAST(:endDate AS timestamp) IS NULL OR p.createdTime <= :endDate)
+""")
+    Page<PostWithCover> findAllWithCoverByOptionalStartDateEndDateUserId(Long userId, Instant startDate, Instant endDate, Pageable pageable);
 }
