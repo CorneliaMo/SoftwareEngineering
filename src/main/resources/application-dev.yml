@@ -3,6 +3,12 @@ spring:
     url: ${DEV_DATABASE_URL}
     username: ${DEV_DATABASE_USERNAME}
     password: ${DEV_DATABASE_PASSWORD}
+  data:
+    redis:
+      host: ${DEV_REDIS_HOST}
+      port: ${DEV_REDIS_PORT}
+      password: ${DEV_REDIS_PASSWORD}
+      database: ${DEV_REDIS_DATABASE}
   sql:
     init:
       mode: always

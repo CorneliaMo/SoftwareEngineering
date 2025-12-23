@@ -1,21 +1,24 @@
 CREATE TABLE IF NOT EXISTS "users" (
-	"user_id" SERIAL NOT NULL,
-	"username" VARCHAR(50) NOT NULL,
-	"password" VARCHAR(255) NOT NULL,
-	"email" VARCHAR(100) NULL DEFAULT NULL,
-	"nickname" VARCHAR(50) NOT NULL,
-	"avatar_url" VARCHAR(255) NULL DEFAULT NULL,
-	"status" BOOLEAN NOT NULL DEFAULT true,
-	"created_time" TIMESTAMP NOT NULL,
-	"updated_time" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	"comment_count" INTEGER NOT NULL DEFAULT 0,
-	"post_count" INTEGER NOT NULL DEFAULT 0,
-	"rating_count" INTEGER NOT NULL DEFAULT 0,
-	PRIMARY KEY ("user_id")
+                         "user_id" SERIAL NOT NULL,
+                         "openid" VARCHAR(512) NULL DEFAULT NULL::character varying,
+                         "username" VARCHAR(50) NOT NULL,
+                         "password" VARCHAR(255) NULL DEFAULT NULL::character varying,
+                         "email" VARCHAR(100) NULL DEFAULT NULL::character varying,
+                         "nickname" VARCHAR(50) NOT NULL,
+                         "avatar_url" VARCHAR(255) NULL DEFAULT NULL::character varying,
+                         "status" BOOLEAN NOT NULL DEFAULT true,
+                         "created_time" TIMESTAMP NOT NULL,
+                         "updated_time" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                         "comment_count" INTEGER NOT NULL DEFAULT 0,
+                         "post_count" INTEGER NOT NULL DEFAULT 0,
+                         "rating_count" INTEGER NOT NULL DEFAULT 0,
+                         PRIMARY KEY ("user_id"),
+                         UNIQUE ("openid")
 )
 ;
 COMMENT ON TABLE "users" IS '用户表，储存用户信息';
 COMMENT ON COLUMN "users"."user_id" IS '用户id';
+COMMENT ON COLUMN "users"."openid" IS '微信OpenID，通过微信登录获取';
 COMMENT ON COLUMN "users"."username" IS '用户名';
 COMMENT ON COLUMN "users"."password" IS '用户密码（已hash加盐）';
 COMMENT ON COLUMN "users"."email" IS '用户邮箱';

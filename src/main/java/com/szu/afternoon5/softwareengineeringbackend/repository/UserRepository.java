@@ -35,4 +35,6 @@ public interface UserRepository extends JpaRepository<User,Long> {
      * 新增方法：实现用户搜索功能
      */
     Page<User> findByNicknameContainingIgnoreCase(String nickname, Pageable pageable);
+
+    Optional<User> findByOpenid(String openid);
 }

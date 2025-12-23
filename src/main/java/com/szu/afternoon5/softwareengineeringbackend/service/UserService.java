@@ -9,9 +9,9 @@ import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
 import com.szu.afternoon5.softwareengineeringbackend.repository.AdminRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.UserRepository;
 import com.szu.afternoon5.softwareengineeringbackend.security.LoginPrincipal;
-import com.szu.afternoon5.softwareengineeringbackend.utils.JwtUtils;
 import com.szu.afternoon5.softwareengineeringbackend.utils.PageableUtils;
 import com.szu.afternoon5.softwareengineeringbackend.utils.PasswordUtil;
+import com.szu.afternoon5.softwareengineeringbackend.utils.WechatUtils;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -24,20 +24,23 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
-    private final JwtUtils jwtUtils;
     private final AdminRepository adminRepository;
     private final PageableUtils pageableUtils;
+    private final SecurityService securityService;
+    private final WechatUtils wechatUtils;
 
-    public UserService(UserRepository userRepository, JwtUtils jwtUtils, AdminRepository adminRepository, PageableUtils pageableUtils) {
+    public UserService(UserRepository userRepository, AdminRepository adminRepository, PageableUtils pageableUtils, SecurityService securityService, WechatUtils wechatUtils) {
         this.userRepository = userRepository;
-        this.jwtUtils = jwtUtils;
         this.adminRepository = adminRepository;
         this.pageableUtils = pageableUtils;
+        this.securityService = securityService;
+        this.wechatUtils = wechatUtils;
     }
 
     // ========== 认证相关方法 ==========
@@ -49,12 +52,16 @@ public class UserService {
         } else {
             User user = new User(
                     request.getUsername(),
+                    null,
                     PasswordUtil.hash(request.getPassword()),
                     null,
                     Objects.requireNonNullElse(request.getNickname(), "新用户"),
                     null);
             User saved = userRepository.save(user);
-            return new UserAuthResponse(saved, jwtUtils.generateToken(saved.getUserId(), null, LoginPrincipal.LoginType.user, null));
+            LoginPrincipal loginPrincipal = new LoginPrincipal(user.getUserId(), null, LoginPrincipal.LoginType.user);
+            String refreshToken = securityService.issueRefreshToken(loginPrincipal);
+            String accessToken = securityService.issueAccessToken(loginPrincipal);
+            return new UserAuthResponse(saved, accessToken, refreshToken);
         }
     }
 
@@ -67,33 +74,43 @@ public class UserService {
             if (!PasswordUtil.matches(request.getPassword(), user.getPassword())) {
                 throw new BusinessException(ErrorCode.TOKEN_INVALID, "密码错误");
             } else {
-                return new UserAuthResponse(user, jwtUtils.generateToken(user.getUserId(), null, LoginPrincipal.LoginType.user, null));
+                LoginPrincipal loginPrincipal = new LoginPrincipal(user.getUserId(), null, LoginPrincipal.LoginType.user);
+                String refreshToken = securityService.issueRefreshToken(loginPrincipal);
+                String accessToken = securityService.issueAccessToken(loginPrincipal);
+                return new UserAuthResponse(user, accessToken, refreshToken);
             }
         }
     }
 
     @Transactional
-    public void resetPassword(@Valid ResetPasswordRequest request, Authentication authentication) {
+    public ResetPasswordResponse resetPassword(@Valid ResetPasswordRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
         if (loginPrincipal == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         } else {
             if (loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user) && loginPrincipal.getUserId() != null) {
                 // 用户进行重置密码
+                // 使先前所有刷新令牌失效
                 Optional<User> userOptional = userRepository.findByUserId(loginPrincipal.getUserId());
                 if (userOptional.isEmpty()) {
                     throw new BusinessException(ErrorCode.TOKEN_INVALID, "用户不存在");
                 } else {
                     User user = userOptional.get();
-                    if (!PasswordUtil.matches(request.getOldPassword(), user.getPassword())) {
+                    if (user.getPassword() != null && !PasswordUtil.matches(request.getOldPassword(), user.getPassword())) {
                         throw new BusinessException(ErrorCode.VALIDATION_FAILED, "旧密码不匹配");
                     } else {
                         user.setPassword(PasswordUtil.hash(request.getNewPassword()));
                         userRepository.save(user);
+                        securityService.revokeRefreshTokens(loginPrincipal);
+                        return new ResetPasswordResponse(
+                                securityService.issueAccessToken(loginPrincipal),
+                                securityService.issueRefreshToken(loginPrincipal)
+                        );
                     }
                 }
             } else if (loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.admin) && loginPrincipal.getAdminId() != null) {
                 // 管理员进行重置密码
+                // 使先前所有刷新令牌失效
                 Optional<Admin> adminOptional = adminRepository.findByAdminId(loginPrincipal.getAdminId());
                 if (adminOptional.isEmpty()) {
                     throw new BusinessException(ErrorCode.TOKEN_INVALID, "用户不存在");
@@ -104,6 +121,11 @@ public class UserService {
                     } else {
                         admin.setPassword(PasswordUtil.hash(request.getNewPassword()));
                         adminRepository.save(admin);
+                        securityService.revokeRefreshTokens(loginPrincipal);
+                        return new ResetPasswordResponse(
+                                securityService.issueAccessToken(loginPrincipal),
+                                securityService.issueRefreshToken(loginPrincipal)
+                        );
                     }
                 }
             } else {
@@ -121,7 +143,10 @@ public class UserService {
             if (!PasswordUtil.matches(request.getPassword(), admin.getPassword())) {
                 throw new BusinessException(ErrorCode.TOKEN_INVALID, "密码错误");
             } else {
-                return new AdminAuthResponse(admin, jwtUtils.generateToken(admin.getUserId(), admin.getAdminId(), LoginPrincipal.LoginType.admin, null));
+                LoginPrincipal loginPrincipal = new LoginPrincipal(admin.getUserId(), admin.getAdminId(), LoginPrincipal.LoginType.admin);
+                String refreshToken = securityService.issueRefreshToken(loginPrincipal);
+                String accessToken = securityService.issueRefreshToken(loginPrincipal);
+                return new AdminAuthResponse(admin, accessToken, refreshToken);
             }
         }
     }
@@ -178,5 +203,31 @@ public class UserService {
                 userPage.getSize(),
                 results
         );
+    }
+
+    @Transactional
+    public UserAuthResponse wechatLogin(@Valid WechatLoginRequest request) {
+        String openid = wechatUtils.getOpenid(request.getJscode());
+        Optional<User> userOptional = userRepository.findByOpenid(openid);
+        User user;
+        if (userOptional.isEmpty()) {
+            // 未注册用户，自动注册并分配默认用户名
+            user = new User(
+                    UUID.randomUUID().toString().toLowerCase().replace("-", "").substring(0, 8),
+                    openid,
+                    null,
+                    null,
+                    "新用户",
+                    null
+            );
+            user = userRepository.save(user);
+        } else {
+            // 已注册用户，直接登录
+            user = userOptional.get();
+        }
+        LoginPrincipal loginPrincipal = new LoginPrincipal(user.getUserId(), null, LoginPrincipal.LoginType.user);
+        String refreshToken = securityService.issueRefreshToken(loginPrincipal);
+        String accessToken = securityService.issueAccessToken(loginPrincipal);
+        return new UserAuthResponse(user, accessToken, refreshToken);
     }
 }

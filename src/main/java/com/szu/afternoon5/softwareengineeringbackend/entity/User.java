@@ -21,6 +21,8 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
+    private String openid;
+
     private String username;
 
     private String password;
@@ -46,8 +48,9 @@ public class User {
     /**
      * 创建用户的构造器，初始化启用状态与计数字段。
      */
-    public User(String username, String password, String email, String nickname, String avatarUrl) {
+    public User(String username, String openid, String password, String email, String nickname, String avatarUrl) {
         this.userId = null;
+        this.openid = openid;
         this.username = username;
         this.password = password;
         this.email = email;
