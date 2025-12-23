@@ -145,7 +145,7 @@ public class UserService {
             } else {
                 LoginPrincipal loginPrincipal = new LoginPrincipal(admin.getUserId(), admin.getAdminId(), LoginPrincipal.LoginType.admin);
                 String refreshToken = securityService.issueRefreshToken(loginPrincipal);
-                String accessToken = securityService.issueRefreshToken(loginPrincipal);
+                String accessToken = securityService.issueAccessToken(loginPrincipal);
                 return new AdminAuthResponse(admin, accessToken, refreshToken);
             }
         }

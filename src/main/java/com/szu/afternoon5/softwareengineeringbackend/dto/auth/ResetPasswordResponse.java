@@ -12,7 +12,7 @@ public class ResetPasswordResponse extends BaseResponse {
     @JsonProperty("access_token")
     private String accessToken;
 
-    @JsonProperty("refreshToken")
+    @JsonProperty("refresh_token")
     private String refreshToken;
 
     public ResetPasswordResponse(String accessToken, String refreshToken) {
