@@ -32,16 +32,18 @@ public class InteractionService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final PageableUtils pageableUtils;
+    private final ContentFilterService contentFilterService;
 
     /**
      * 构造互动服务，注入所需仓储与工具。
      */
     public InteractionService(RatingRepository ratingRepository, CommentRepository commentRepository,
-                              PostRepository postRepository, PageableUtils pageableUtils) {
+                              PostRepository postRepository, PageableUtils pageableUtils, ContentFilterService contentFilterService) {
         this.ratingRepository = ratingRepository;
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.pageableUtils = pageableUtils;
+        this.contentFilterService = contentFilterService;
     }
 
     /**
@@ -147,6 +149,13 @@ public class InteractionService {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
         checkPrincipalAndPostExist(loginPrincipal, postId);
 
+        // 进行内容过滤
+        ContentFilterService.FilterResult textFilterResult;
+        textFilterResult = contentFilterService.filter(request.getCommentText());
+        if (textFilterResult.isMatched()) {
+            throw new BusinessException(ErrorCode.CONTENT_BLOCKED);
+        }
+
         // 创建新评论
         // TODO：设计接口支持回复功能
         Comment comment = new Comment(
@@ -213,7 +222,7 @@ public class InteractionService {
         Comment comment = commentOptional.get();
 
         // 检查评论是否属于该帖子
-        if (!comment.getPostId().equals(postId)) {
+        if (comment.getPostId() != null && !comment.getPostId().equals(postId)) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED, "评论不属于该帖子");
         }
 

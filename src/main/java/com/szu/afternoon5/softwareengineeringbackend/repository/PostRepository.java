@@ -3,6 +3,7 @@ package com.szu.afternoon5.softwareengineeringbackend.repository;
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover;
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCoverForNative;
 import com.szu.afternoon5.softwareengineeringbackend.entity.Post;
+import jakarta.validation.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post,Long> {
 
@@ -19,7 +21,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
      * 查询用户的帖子并携带封面媒体信息，支持分页。
      */
     @Query(value = """
-    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
     LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
     WHERE p.userId = :userId AND p.isDeleted = :isDeleted
 """)
@@ -42,6 +44,8 @@ public interface PostRepository extends JpaRepository<Post,Long> {
             rating_count,
             comment_count,
             cover_media_id,
+            has_image,
+            has_video,
             text_query
         )
         VALUES (
@@ -55,6 +59,8 @@ public interface PostRepository extends JpaRepository<Post,Long> {
             :ratingCount,
             :commentCount,
             :coverMediaId,
+            :hasImage,
+            :hasVideo,
 
             -- 这里构建全文检索向量
             setweight(to_tsvector('simple', :titleSeg), 'A') ||
@@ -74,6 +80,8 @@ public interface PostRepository extends JpaRepository<Post,Long> {
             @Param("ratingCount") Integer ratingCount,
             @Param("commentCount") Integer commentCount,
             @Param("coverMediaId") Long coverMediaId,
+            @Param("hasImage") Boolean hasImage,
+            @Param("hasVideo") Boolean hasVideo,
             @Param("titleSeg") String titleSeg,
             @Param("bodySeg") String bodySeg
     );
@@ -122,7 +130,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     );
 
     @Query("""
-        SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
+        SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
         LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
         WHERE p.isDeleted = false
           AND p.createdTime >= :start
@@ -135,7 +143,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
                                  Pageable pageable);
 
     @Query("""
-        SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
+        SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
         JOIN PostTag pt ON p.postId = pt.postId
         JOIN Tag t ON pt.tagId = t.tagId
         LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
@@ -148,7 +156,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
                                Pageable pageable);
 
     @Query(value = """
-            SELECT p.post_id, p.user_id, p.post_title, p.post_text, p.is_deleted, p.deleted_time, p.created_time, p.updated_time, p.rating_count, p.comment_count, p.cover_media_id, pm.upload_user_id, pm.media_url, pm.media_type, pm.sort_order FROM posts p
+            SELECT p.post_id, p.user_id, p.post_title, p.post_text, p.is_deleted, p.deleted_time, p.created_time, p.updated_time, p.rating_count, p.comment_count, p.cover_media_id, pm.upload_user_id, pm.media_url, pm.media_type, pm.sort_order, p.has_image, p.has_video FROM posts p
             LEFT JOIN post_media pm ON p.cover_media_id = pm.media_id
             WHERE p.is_deleted = FALSE
               AND p.text_query @@ plainto_tsquery('simple', :queryText)
@@ -173,32 +181,29 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     @Modifying
     @Query(value = """
     UPDATE Post p
-    SET p.coverMediaId = :coverMediaId
+    SET p.coverMediaId = :coverMediaId, p.hasImage = :hasImage, p.hasVideo = :hasVideo
     WHERE p.postId = :postId
     """)
-    void updatePostCover(Long postId, Long coverMediaId);
+    void updatePostCover(Long postId, Long coverMediaId, Boolean hasImage, Boolean hasVideo);
 
     @Query("""
-    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
     LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
     WHERE p.userId = :userId AND p.isDeleted = FALSE
 """)
     Page<PostWithCover> findByUserIdAndIsDeleted(Long userId, boolean isDeleted, Pageable pageable);
 
-    /**
-     * 根据用户ID查询帖子（用于管理端），支持分页
-     * 新增方法：实现按用户ID筛选帖子功能
-     */
-    @Query("""
-    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
-    LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
-    WHERE p.userId = :userId
-""")
-    Page<PostWithCover> findByUserIdWithCover(Long userId, Pageable pageable);
+    List<Post> findAllByPostIdIn(@NotEmpty List<Long> postIds);
 
     @Query("""
-    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder) FROM Post p
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
     LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
+    LEFT JOIN User u ON p.userId = u.userId
+    WHERE (:userId IS NULL OR u.userId = :userId)
+        AND (:username IS NULL OR u.username LIKE :username)
+        AND (:nickname IS NULL OR u.nickname LIKE :nickname)
+        AND (:hasImage IS NULL OR p.hasImage = :hasImage)
+        AND (:hasVideo IS NULL OR p.hasVideo = :hasVideo)
 """)
-    Page<PostWithCover> findAllWithCover(Pageable pageable);
+    Page<PostWithCover> findAllWithCoverByOptionalUserIdUsernameNicknamePostType(Pageable pageable, Long userId, String username, String nickname, Boolean hasImage, Boolean hasVideo);
 }

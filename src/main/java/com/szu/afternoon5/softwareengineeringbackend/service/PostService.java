@@ -5,6 +5,7 @@ import com.szu.afternoon5.softwareengineeringbackend.entity.Post;
 import com.szu.afternoon5.softwareengineeringbackend.error.BusinessException;
 import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
 import com.szu.afternoon5.softwareengineeringbackend.repository.PostRepository;
+import com.szu.afternoon5.softwareengineeringbackend.repository.TagRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.UserRepository;
 import com.szu.afternoon5.softwareengineeringbackend.security.LoginPrincipal;
 import com.szu.afternoon5.softwareengineeringbackend.utils.PageableUtils;
@@ -32,14 +33,18 @@ public class PostService {
     private final UserRepository userRepository;
     private final PageableUtils pageableUtils;
     private final JiebaService jiebaService;
+    private final TagRepository tagRepository;
+    private final ContentFilterService contentFilterService;
 
-    public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils, JiebaService jiebaService) {
+    public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils, JiebaService jiebaService, TagRepository tagRepository, ContentFilterService contentFilterService) {
         this.tagService = tagService;
         this.postMediaService = postMediaService;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.pageableUtils = pageableUtils;
         this.jiebaService = jiebaService;
+        this.tagRepository = tagRepository;
+        this.contentFilterService = contentFilterService;
     }
 
     /**
@@ -55,6 +60,13 @@ public class PostService {
         if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         } else {
+            // 进行内容过滤
+            ContentFilterService.FilterResult titleFilterResult, textFilterResult;
+            titleFilterResult = contentFilterService.filter(request.getPostTitle());
+            textFilterResult = contentFilterService.filter(request.getPostText());
+            if (textFilterResult.isMatched() || titleFilterResult.isMatched()) {
+                throw new BusinessException(ErrorCode.CONTENT_BLOCKED);
+            }
             Post post = new Post(loginPrincipal.getUserId(), request.getPostTitle(), request.getPostText());
             List<String> titleSegment = jiebaService.cutForIndex(post.getPostTitle());
             List<String> textSegment = jiebaService.cutForIndex(post.getPostText());
@@ -71,6 +83,8 @@ public class PostService {
                     post.getRatingCount(),
                     post.getCommentCount(),
                     post.getCoverMediaId(),
+                    post.getHasImage(),
+                    post.getHasVideo(),
                     SearchTextUtil.joinTokens(titleSegment),
                     SearchTextUtil.joinTokens(textSegment)
             );
@@ -91,7 +105,7 @@ public class PostService {
      * @return 帖子列表及分页信息
      */
     public PostListResponse getPostList(Integer currentPage, Integer pageSize, Long userId) {
-        if (userRepository.existsByUserId(userId)) {
+        if (userId == null || userRepository.existsByUserId(userId)) {
             List<String> sortColumns = List.of("post_title", "created_time", "updated_time", "rating_count", "comment_count");
 
             // TODO：当前默认按帖子创建时间倒序排列，后续可以让前端自定义排序
@@ -152,6 +166,14 @@ public class PostService {
                     }
                     if (postUpdateContent.getPostText() != null && !postUpdateContent.getPostText().isEmpty()) {
                         post.setPostText(postUpdateContent.getPostText());
+                    }
+
+                    // 进行内容过滤
+                    ContentFilterService.FilterResult titleFilterResult, textFilterResult;
+                    titleFilterResult = contentFilterService.filter(postUpdateContent.getPostTitle());
+                    textFilterResult = contentFilterService.filter(postUpdateContent.getPostText());
+                    if (textFilterResult.isMatched() || titleFilterResult.isMatched()) {
+                        throw new BusinessException(ErrorCode.CONTENT_BLOCKED);
                     }
 
                     // 更新分词索引

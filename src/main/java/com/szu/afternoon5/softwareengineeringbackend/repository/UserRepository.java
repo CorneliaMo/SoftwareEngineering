@@ -6,6 +6,7 @@ import com.szu.afternoon5.softwareengineeringbackend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
@@ -37,4 +38,12 @@ public interface UserRepository extends JpaRepository<User,Long> {
     Page<User> findByNicknameContainingIgnoreCase(String nickname, Pageable pageable);
 
     Optional<User> findByOpenid(String openid);
+
+    @Query("""
+    SELECT u FROM User u
+        WHERE (:userId IS NULL OR u.userId = :userId)
+        AND (:nickname IS NULL OR u.nickname LIKE :nickname)
+        AND (:username IS NULL OR u.username LIKE :username)
+""")
+    Page<User> findAllByOptionalNicknameUsernameUserId(Pageable pageable, String nickname, String username, Long userId);
 }

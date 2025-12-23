@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS "posts" (
 	"comment_count" INTEGER NOT NULL DEFAULT 0,
     "cover_media_id" INTEGER NULL DEFAULT NULL,
     "text_query"   tsvector,
+    "has_image" BOOLEAN NOT NULL DEFAULT false,
+    "has_video" BOOLEAN NOT NULL DEFAULT false,
 	PRIMARY KEY ("post_id")
 )
 ;
@@ -178,6 +180,7 @@ CREATE TABLE IF NOT EXISTS "admins" (
 	"last_login" TIMESTAMP NULL,
 	"created_time" TIMESTAMP NOT NULL,
 	PRIMARY KEY ("admin_id"),
+    UNIQUE ("username"),
 	CONSTRAINT "fk_admins_users" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL
 )
 ;

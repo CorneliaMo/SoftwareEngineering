@@ -34,3 +34,7 @@ ali:
     access-key-secret: ${ALI_OSS_ACCESS_KEY_SECRET}
     bucket-name: ${ALI_OSS_BUCKET_NAME}
     cdn-host: ${ALI_OSS_CDN_HOST}
+
+builtin-super-admin:
+  username: superadmin
+  password: superadmin

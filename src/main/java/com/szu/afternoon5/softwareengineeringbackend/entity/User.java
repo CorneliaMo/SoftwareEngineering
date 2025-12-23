@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.annotation.Nullable;
 import java.time.Instant;
 
 /**
@@ -21,16 +22,20 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
+    @Nullable
     private String openid;
 
     private String username;
 
+    @Nullable
     private String password;
 
+    @Nullable
     private String email;
 
     private String nickname;
 
+    @Nullable
     private String avatarUrl;
 
     private Boolean status;

@@ -17,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -134,6 +135,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public AdminAuthResponse adminLogin(@Valid AdminLoginRequest request) {
         Optional<Admin> adminOptional = adminRepository.findByUsername(request.getUsername());
         if (adminOptional.isEmpty()) {
@@ -146,6 +148,8 @@ public class UserService {
                 LoginPrincipal loginPrincipal = new LoginPrincipal(admin.getUserId(), admin.getAdminId(), LoginPrincipal.LoginType.admin);
                 String refreshToken = securityService.issueRefreshToken(loginPrincipal);
                 String accessToken = securityService.issueAccessToken(loginPrincipal);
+                admin.setLastLogin(Instant.now());
+                adminRepository.save(admin);
                 return new AdminAuthResponse(admin, accessToken, refreshToken);
             }
         }

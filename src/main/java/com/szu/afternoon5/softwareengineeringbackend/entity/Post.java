@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.annotation.Nullable;
 import java.time.Instant;
 
 /**
@@ -21,6 +22,7 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long postId;
 
+    @Nullable
     private Long userId;
 
     private String postTitle;
@@ -29,6 +31,7 @@ public class Post {
 
     private Boolean isDeleted;
 
+    @Nullable
     private Instant deletedTime;
 
     private Instant createdTime;
@@ -39,7 +42,12 @@ public class Post {
 
     private Integer commentCount;
 
+    private Boolean hasImage;
+
+    private Boolean hasVideo;
+
     // 冗余字段，储存封面对应的postMediaId
+    @Nullable
     private Long coverMediaId;
 
     /**
@@ -57,9 +65,11 @@ public class Post {
         this.ratingCount = 0;
         this.commentCount = 0;
         this.coverMediaId = null;
+        this.hasImage = false;
+        this.hasVideo = false;
     }
 
-    public Post(Long postId, Long userId, String postTitle, String postText, Boolean isDeleted, Instant deletedTime, Instant createdTime, Instant updatedTime, Integer ratingCount, Integer commentCount, Long coverMediaId) {
+    public Post(Long postId, Long userId, String postTitle, String postText, Boolean isDeleted, Instant deletedTime, Instant createdTime, Instant updatedTime, Integer ratingCount, Integer commentCount, Long coverMediaId, Boolean hasImage, Boolean hasVideo) {
         this.postId = postId;
         this.userId = userId;
         this.postTitle = postTitle;
@@ -71,6 +81,8 @@ public class Post {
         this.ratingCount = ratingCount;
         this.commentCount = commentCount;
         this.coverMediaId = coverMediaId;
+        this.hasImage = hasImage;
+        this.hasVideo = hasVideo;
     }
 
     /**
