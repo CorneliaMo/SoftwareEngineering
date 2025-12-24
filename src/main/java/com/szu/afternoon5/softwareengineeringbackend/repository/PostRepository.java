@@ -1,5 +1,6 @@
 package com.szu.afternoon5.softwareengineeringbackend.repository;
 
+import com.szu.afternoon5.softwareengineeringbackend.dto.IdCount;
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover;
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCoverForNative;
 import com.szu.afternoon5.softwareengineeringbackend.entity.Post;
@@ -224,4 +225,47 @@ public interface PostRepository extends JpaRepository<Post,Long> {
         AND (CAST(:endDate AS timestamp) IS NULL OR p.createdTime <= :endDate)
 """)
     Page<PostWithCover> findAllWithCoverByOptionalStartDateEndDateUserId(Long userId, Instant startDate, Instant endDate, Pageable pageable);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE posts
+        SET comment_count = comment_count + :delta
+        WHERE post_id = :postId
+        """, nativeQuery = true)
+    int addCommentCount(@Param("postId") Long postId, @Param("delta") long delta);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE posts
+        SET rating_count = rating_count + :delta
+        WHERE post_id = :postId
+        """, nativeQuery = true)
+    int addRatingCount(@Param("postId") Long postId, @Param("delta") long delta);
+
+    // --- 回写校准值（避免循环 save 导致并发丢失）---
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE posts
+        SET comment_count = :value
+        WHERE post_id = :postId
+        """, nativeQuery = true)
+    int setCommentCount(@Param("postId") Long postId, @Param("value") long value);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE posts
+        SET rating_count = :value
+        WHERE post_id = :postId
+        """, nativeQuery = true)
+    int setRatingCount(@Param("postId") Long postId, @Param("value") long value);
+
+    @Query(value = """
+        SELECT p.user_id AS id, COUNT(*)::bigint AS cnt
+        FROM posts p
+        WHERE p.is_deleted = false
+          AND p.user_id = ANY(:userIds)
+        GROUP BY p.user_id
+        """, nativeQuery = true)
+    List<IdCount> countByUserIds(@Param("userIds") Long[] userIds);
 }

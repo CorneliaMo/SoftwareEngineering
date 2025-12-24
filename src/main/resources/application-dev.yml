@@ -19,6 +19,7 @@ logging:
   level:
     root: INFO
     org.springframework.web: DEBUG
+    com.szu.afternoon5.softwareengineeringbackend.service.MetricsService: DEBUG
 
 wx:
   test-jscode: TEST_TEST_ONLY_JSCODE

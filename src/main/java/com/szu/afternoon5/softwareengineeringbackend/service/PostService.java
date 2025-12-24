@@ -4,6 +4,8 @@ import com.szu.afternoon5.softwareengineeringbackend.dto.posts.*;
 import com.szu.afternoon5.softwareengineeringbackend.entity.Post;
 import com.szu.afternoon5.softwareengineeringbackend.error.BusinessException;
 import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
+import com.szu.afternoon5.softwareengineeringbackend.event.PostCreatedEvent;
+import com.szu.afternoon5.softwareengineeringbackend.event.PostDeletedEvent;
 import com.szu.afternoon5.softwareengineeringbackend.repository.PostRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.TagRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.UserRepository;
@@ -12,8 +14,10 @@ import com.szu.afternoon5.softwareengineeringbackend.utils.PageableUtils;
 import com.szu.afternoon5.softwareengineeringbackend.utils.SearchTextUtil;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -35,8 +39,10 @@ public class PostService {
     private final JiebaService jiebaService;
     private final TagRepository tagRepository;
     private final ContentFilterService contentFilterService;
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private final DefaultAuthenticationEventPublisher authenticationEventPublisher;
 
-    public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils, JiebaService jiebaService, TagRepository tagRepository, ContentFilterService contentFilterService) {
+    public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils, JiebaService jiebaService, TagRepository tagRepository, ContentFilterService contentFilterService, ApplicationEventPublisher applicationEventPublisher, DefaultAuthenticationEventPublisher authenticationEventPublisher) {
         this.tagService = tagService;
         this.postMediaService = postMediaService;
         this.postRepository = postRepository;
@@ -45,6 +51,8 @@ public class PostService {
         this.jiebaService = jiebaService;
         this.tagRepository = tagRepository;
         this.contentFilterService = contentFilterService;
+        this.applicationEventPublisher = applicationEventPublisher;
+        this.authenticationEventPublisher = authenticationEventPublisher;
     }
 
     /**
@@ -92,6 +100,9 @@ public class PostService {
             // 通过postId绑定相应tag和media
             tagService.bindTagsToPost(newPostId, request.getTags());
             postMediaService.bindMediaToPost(newPostId, request.getMediaIds());
+            applicationEventPublisher.publishEvent(
+                    new PostCreatedEvent(post.getPostId(), loginPrincipal.getUserId())
+            );
             return new PublishPostResponse(new PostInfo(post));
         }
     }
@@ -228,6 +239,7 @@ public class PostService {
                         // 设置软删除并记录删除时间
                         post.setIsDeleted(true);
                         post.setDeletedTime(Instant.now());
+                        applicationEventPublisher.publishEvent(new PostDeletedEvent(post.getPostId(), loginPrincipal.getUserId()));
                         postRepository.save(post);
                     }
                 } else {

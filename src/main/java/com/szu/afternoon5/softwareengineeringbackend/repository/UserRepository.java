@@ -6,7 +6,9 @@ import com.szu.afternoon5.softwareengineeringbackend.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -46,4 +48,52 @@ public interface UserRepository extends JpaRepository<User,Long> {
         AND (:username IS NULL OR u.username LIKE :username)
 """)
     Page<User> findAllByOptionalNicknameUsernameUserId(Pageable pageable, String nickname, String username, Long userId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE "users"
+        SET comment_count = comment_count + :delta
+        WHERE user_id = :userId
+        """, nativeQuery = true)
+    int addCommentCount(@Param("userId") Long userId, @Param("delta") long delta);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE "users"
+        SET post_count = post_count + :delta
+        WHERE user_id = :userId
+        """, nativeQuery = true)
+    int addPostCount(@Param("userId") Long userId, @Param("delta") long delta);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE "users"
+        SET rating_count = rating_count + :delta
+        WHERE user_id = :userId
+        """, nativeQuery = true)
+    int addRatingCount(@Param("userId") Long userId, @Param("delta") long delta);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE users
+        SET comment_count = :value
+        WHERE user_id = :userId
+        """, nativeQuery = true)
+    int setCommentCount(@Param("userId") Long userId, @Param("value") long value);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE users
+        SET post_count = :value
+        WHERE user_id = :userId
+        """, nativeQuery = true)
+    int setPostCount(@Param("userId") Long userId, @Param("value") long value);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE users
+        SET rating_count = :value
+        WHERE user_id = :userId
+        """, nativeQuery = true)
+    int setRatingCount(@Param("userId") Long userId, @Param("value") long value);
 }

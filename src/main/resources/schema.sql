@@ -65,6 +65,8 @@ COMMENT ON COLUMN "posts"."cover_media_id" IS '冗余字段，储存封面对应
 CREATE INDEX IF NOT EXISTS "fk__posts__users" ON "posts" ("user_id");
 -- 创建GIN索引需要在数据库中以postgres用户执行 CREATE EXTENSION pg_trgm;
 CREATE INDEX IF NOT EXISTS "idx_posts_text_query" ON "posts" USING gin ("text_query");
+CREATE INDEX IF NOT EXISTS idx_posts_user_active ON posts(user_id) WHERE is_deleted = false;
+
 
 CREATE TABLE IF NOT EXISTS "post_media" (
 	"media_id" SERIAL NOT NULL,
@@ -119,6 +121,9 @@ COMMENT ON COLUMN "comments"."updated_time" IS '更新时间';
 CREATE INDEX IF NOT EXISTS "fk_comments_posts" ON "comments" ("post_id");
 CREATE INDEX IF NOT EXISTS "fk_comments_users" ON "comments" ("user_id");
 CREATE INDEX IF NOT EXISTS "fk_comments_comments" ON "comments" ("parent_id");
+CREATE INDEX IF NOT EXISTS idx_comments_post_active ON comments(post_id) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS idx_comments_user_active ON comments(user_id) WHERE is_deleted = false;
+
 
 CREATE TABLE IF NOT EXISTS "tags" (
 	"tag_id" SERIAL NOT NULL,
@@ -168,6 +173,9 @@ COMMENT ON COLUMN "ratings"."created_time" IS '创建时间';
 COMMENT ON COLUMN "ratings"."updated_time" IS '更新时间';
 CREATE INDEX IF NOT EXISTS "fk__ratings__posts" ON "ratings" ("post_id");
 CREATE INDEX IF NOT EXISTS "fk__ratings__users" ON "ratings" ("user_id");
+CREATE INDEX IF NOT EXISTS idx_ratings_post ON ratings(post_id);
+CREATE INDEX IF NOT EXISTS idx_ratings_user ON ratings(user_id);
+
 
 CREATE TABLE IF NOT EXISTS "admins" (
 	"admin_id" SERIAL NOT NULL,

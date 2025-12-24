@@ -5,6 +5,10 @@ import com.szu.afternoon5.softwareengineeringbackend.entity.Comment;
 import com.szu.afternoon5.softwareengineeringbackend.entity.Rating;
 import com.szu.afternoon5.softwareengineeringbackend.error.BusinessException;
 import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
+import com.szu.afternoon5.softwareengineeringbackend.event.CommentCreatedEvent;
+import com.szu.afternoon5.softwareengineeringbackend.event.CommentDeletedEvent;
+import com.szu.afternoon5.softwareengineeringbackend.event.RatingCreatedEvent;
+import com.szu.afternoon5.softwareengineeringbackend.event.RatingDeletedEvent;
 import com.szu.afternoon5.softwareengineeringbackend.repository.CommentRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.PostRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.RatingRepository;
@@ -12,6 +16,7 @@ import com.szu.afternoon5.softwareengineeringbackend.security.LoginPrincipal;
 import com.szu.afternoon5.softwareengineeringbackend.utils.PageableUtils;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -33,17 +38,19 @@ public class InteractionService {
     private final PostRepository postRepository;
     private final PageableUtils pageableUtils;
     private final ContentFilterService contentFilterService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     /**
      * 构造互动服务，注入所需仓储与工具。
      */
     public InteractionService(RatingRepository ratingRepository, CommentRepository commentRepository,
-                              PostRepository postRepository, PageableUtils pageableUtils, ContentFilterService contentFilterService) {
+                              PostRepository postRepository, PageableUtils pageableUtils, ContentFilterService contentFilterService, ApplicationEventPublisher applicationEventPublisher) {
         this.ratingRepository = ratingRepository;
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.pageableUtils = pageableUtils;
         this.contentFilterService = contentFilterService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     /**
@@ -96,6 +103,7 @@ public class InteractionService {
             rating = existingRating.get();
             rating.setRatingValue(request.getRating());
             rating.setUpdatedTime(Instant.now());
+            ratingRepository.save(rating);
         } else {
             // 创建新评分
             rating = new Rating(
@@ -103,9 +111,9 @@ public class InteractionService {
                     loginPrincipal.getUserId(),
                     request.getRating()
             );
+            Rating newRating = ratingRepository.save(rating);
+            applicationEventPublisher.publishEvent(new RatingCreatedEvent(newRating.getRatingId(), postId, loginPrincipal.getUserId()));
         }
-
-        ratingRepository.save(rating);
 
         // 重新计算统计信息
         FindAverageRatingResult ratingStats = ratingRepository.findAverageRatingAndCountByPostId(postId);
@@ -131,6 +139,7 @@ public class InteractionService {
         Optional<Rating> userRating = ratingRepository.findByPostIdAndUserId(postId, loginPrincipal.getUserId());
         if (userRating.isPresent()) {
             ratingRepository.delete(userRating.get());
+            applicationEventPublisher.publishEvent(new RatingDeletedEvent(userRating.get().getRatingId(), postId, loginPrincipal.getUserId()));
         }
         // 如果用户没有评分，也不抛出异常，静默成功
     }
@@ -166,6 +175,7 @@ public class InteractionService {
         );
 
         Comment savedComment = commentRepository.save(comment);
+        applicationEventPublisher.publishEvent(new CommentCreatedEvent(savedComment.getCommentId(), postId, loginPrincipal.getUserId()));
         return new SubmitCommentResponse(savedComment.getCommentId());
     }
 
@@ -226,20 +236,19 @@ public class InteractionService {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED, "评论不属于该帖子");
         }
 
-        // 检查权限：评论作者或管理员可以删除
+        // 检查权限：评论作者可以删除
         boolean hasPermission = false;
         if (loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             hasPermission = loginPrincipal.getUserId().equals(comment.getUserId());
-        } else if (loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.admin)) {
-            hasPermission = true;
         }
 
         if (hasPermission) {
             comment.setIsDeleted(true);
             comment.setUpdatedTime(Instant.now());
             commentRepository.save(comment);
+            applicationEventPublisher.publishEvent(new CommentDeletedEvent(comment.getCommentId(), postId, loginPrincipal.getUserId()));
         } else {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "只有评论作者或管理员可以删除评论");
+            throw new BusinessException(ErrorCode.FORBIDDEN, "只有评论作者可以删除评论");
         }
     }
 
