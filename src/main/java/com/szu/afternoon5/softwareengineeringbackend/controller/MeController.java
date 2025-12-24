@@ -1,11 +1,14 @@
 package com.szu.afternoon5.softwareengineeringbackend.controller;
 
+import com.szu.afternoon5.softwareengineeringbackend.dto.BaseResponse;
 import com.szu.afternoon5.softwareengineeringbackend.dto.me.*;
 import com.szu.afternoon5.softwareengineeringbackend.service.MeService;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 个人中心控制器，用于获取和更新当前登录用户的信息。
@@ -75,5 +78,14 @@ public class MeController {
                                             @RequestParam(value = "page_size", required = false) Integer pageSize,
                                             Authentication authentication) {
         return meService.getMyComments(currentPage, pageSize, authentication);
+    }
+
+    /**
+     *
+     */
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public BaseResponse uploadAvatar(@ModelAttribute UploadAvatarRequest request, Authentication authentication) {
+        meService.uploadAvatar(request, authentication);
+        return new BaseResponse();
     }
 }
