@@ -51,7 +51,9 @@ CREATE TABLE IF NOT EXISTS "posts" (
     "text_query"   tsvector,
     "has_image" BOOLEAN NOT NULL DEFAULT false,
     "has_video" BOOLEAN NOT NULL DEFAULT false,
-	PRIMARY KEY ("post_id")
+	PRIMARY KEY ("post_id"),
+    CONSTRAINT "FK_posts_post_media" FOREIGN KEY ("cover_media_id") REFERENCES "post_media" ("media_id") ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT "FK_posts_users" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL
 )
 ;
 COMMENT ON TABLE "posts" IS '帖子表，储存用户发表的帖子';
@@ -334,3 +336,25 @@ COMMENT ON COLUMN "conversation_one_to_one_map"."user_high_id" IS '用户id，�
 COMMENT ON COLUMN "conversation_one_to_one_map"."conversation_id" IS '对话id';
 COMMENT ON COLUMN "conversation_one_to_one_map"."created_time" IS '创建时间';
 
+CREATE TABLE IF NOT EXISTS "user_deletion_requests" (
+                                          "request_id" SERIAL NOT NULL,
+                                          "user_id" INTEGER NOT NULL,
+                                          "requested_time" TIMESTAMP NOT NULL,
+                                          "execute_after" TIMESTAMP NOT NULL,
+                                          "status" VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+                                          "processed_time" TIMESTAMP NULL DEFAULT NULL,
+                                          "fail_reason" TEXT NULL DEFAULT NULL,
+                                          PRIMARY KEY ("request_id"),
+                                          UNIQUE ("user_id"),
+                                          CONSTRAINT "user_deletion_requests_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE NO ACTION ON DELETE CASCADE
+)
+;
+COMMENT ON TABLE "user_deletion_requests" IS '记录用户注销的请求，在期限结束后删除所有数据';
+COMMENT ON COLUMN "user_deletion_requests"."request_id" IS '请求id';
+COMMENT ON COLUMN "user_deletion_requests"."user_id" IS '用户id';
+COMMENT ON COLUMN "user_deletion_requests"."requested_time" IS '申请时间';
+COMMENT ON COLUMN "user_deletion_requests"."execute_after" IS '预计执行时间';
+COMMENT ON COLUMN "user_deletion_requests"."status" IS 'PENDING / PROCESSING / DONE / CANCELLED / FAILED';
+COMMENT ON COLUMN "user_deletion_requests"."processed_time" IS '完成时间';
+COMMENT ON COLUMN "user_deletion_requests"."fail_reason" IS '失败原因';
+CREATE INDEX IF NOT EXISTS "idx_user_deletion_requests_due" ON "user_deletion_requests" ("status", "execute_after");

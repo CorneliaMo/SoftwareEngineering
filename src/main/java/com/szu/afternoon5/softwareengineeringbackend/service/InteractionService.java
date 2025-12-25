@@ -311,11 +311,15 @@ public class InteractionService {
 
     public InteractionUserListResponse getFollowing(Integer currentPage, Integer pageSize, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        return getFollowing(currentPage, pageSize, loginPrincipal.getUserId());
+    }
+
+    public InteractionUserListResponse getFollowing(Integer currentPage, Integer pageSize, Long userId) {
         // TODO：预留前端排序的空间
         List<String> sortColumns = List.of("follower_id", "followee_id", "created_time");
         Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "followee_id", "ASC");
 
-        Page<UserInfo> userInfoPage = followRecordRepository.getFollowingUserInfo(loginPrincipal.getUserId(), pageable);
+        Page<UserInfo> userInfoPage = followRecordRepository.getFollowingUserInfo(userId, pageable);
         return new InteractionUserListResponse(
                 userInfoPage.getTotalPages(),
                 (int) userInfoPage.getTotalElements(),
@@ -327,11 +331,15 @@ public class InteractionService {
 
     public InteractionUserListResponse getFollowers(Integer currentPage, Integer pageSize, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        return getFollowers(currentPage, pageSize, loginPrincipal.getUserId());
+    }
+
+    public InteractionUserListResponse getFollowers(Integer currentPage, Integer pageSize, Long userId) {
         // TODO：预留前端排序的空间
         List<String> sortColumns = List.of("follower_id", "followee_id", "created_time");
         Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "follower_id", "ASC");
 
-        Page<UserInfo> userInfoPage = followRecordRepository.getFollowerUserInfo(loginPrincipal.getUserId(), pageable);
+        Page<UserInfo> userInfoPage = followRecordRepository.getFollowerUserInfo(userId, pageable);
         return new InteractionUserListResponse(
                 userInfoPage.getTotalPages(),
                 (int) userInfoPage.getTotalElements(),
