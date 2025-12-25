@@ -7,7 +7,6 @@ import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
 import com.szu.afternoon5.softwareengineeringbackend.event.PostCreatedEvent;
 import com.szu.afternoon5.softwareengineeringbackend.event.PostDeletedEvent;
 import com.szu.afternoon5.softwareengineeringbackend.repository.PostRepository;
-import com.szu.afternoon5.softwareengineeringbackend.repository.TagRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.UserRepository;
 import com.szu.afternoon5.softwareengineeringbackend.security.LoginPrincipal;
 import com.szu.afternoon5.softwareengineeringbackend.utils.PageableUtils;
@@ -17,7 +16,6 @@ import jakarta.validation.Valid;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -37,22 +35,18 @@ public class PostService {
     private final UserRepository userRepository;
     private final PageableUtils pageableUtils;
     private final JiebaService jiebaService;
-    private final TagRepository tagRepository;
     private final ContentFilterService contentFilterService;
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final DefaultAuthenticationEventPublisher authenticationEventPublisher;
 
-    public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils, JiebaService jiebaService, TagRepository tagRepository, ContentFilterService contentFilterService, ApplicationEventPublisher applicationEventPublisher, DefaultAuthenticationEventPublisher authenticationEventPublisher) {
+    public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils, JiebaService jiebaService, ContentFilterService contentFilterService, ApplicationEventPublisher applicationEventPublisher) {
         this.tagService = tagService;
         this.postMediaService = postMediaService;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.pageableUtils = pageableUtils;
         this.jiebaService = jiebaService;
-        this.tagRepository = tagRepository;
         this.contentFilterService = contentFilterService;
         this.applicationEventPublisher = applicationEventPublisher;
-        this.authenticationEventPublisher = authenticationEventPublisher;
     }
 
     /**
@@ -153,7 +147,7 @@ public class PostService {
     }
 
     /**
-     * 更新帖子内容及标签，需要帖子作者或管理员权限。
+     * 更新帖子内容及标签，需要帖子作者。
      *
      * @param postId         帖子 ID
      * @param request        更新内容请求
@@ -171,7 +165,7 @@ public class PostService {
             } else {
                 PostUpdateContent postUpdateContent = request.getPost();
                 Post post = postOptional.get();
-                if ((loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user) && loginPrincipal.getUserId().equals(post.getUserId())) || (loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.admin))) {
+                if (loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user) && loginPrincipal.getUserId().equals(post.getUserId())) {
                     if (postUpdateContent.getPostTitle() != null && !postUpdateContent.getPostTitle().isEmpty()) {
                         post.setPostTitle(postUpdateContent.getPostTitle());
                     }
@@ -208,8 +202,9 @@ public class PostService {
                     );
                     // 在保存基础信息后同步更新标签
                     tagService.updatePostTags(post.getPostId(), request.getTags());
+                    postMediaService.bindMediaToPost(post.getPostId(), request.getMediaIds());
                 } else {
-                    throw new BusinessException(ErrorCode.FORBIDDEN, "只有帖子作者或管理员可以修改");
+                    throw new BusinessException(ErrorCode.FORBIDDEN, "只有帖子作者可以修改");
                 }
             }
         }

@@ -99,7 +99,7 @@ public class PostController {
      * @return 操作结果
      */
     @PutMapping("/detail/{post_id}")
-    @PreAuthorize("@perm.isUser(authentication.principal) || @perm.isAdmin(authentication.principal)")
+    @PreAuthorize("@perm.isUser(authentication.principal)")
     public BaseResponse updatePostDetail(@PathVariable("post_id") Long postId,
                                          @Valid @RequestBody PostUpdateRequest request,
                                          Authentication authentication) {

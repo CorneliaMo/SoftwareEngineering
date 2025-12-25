@@ -91,6 +91,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
      * 更新指定postId的行的所有数据，通过标题与正文分词构建全文搜索索引，并返回受影响的行数
      * @return rows
      */
+    @Modifying
     @Transactional
     @Query(value = """
     UPDATE posts
