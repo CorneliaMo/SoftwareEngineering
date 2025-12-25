@@ -1,24 +1,20 @@
 package com.szu.afternoon5.softwareengineeringbackend.service;
 
 import com.szu.afternoon5.softwareengineeringbackend.dto.interactions.*;
-import com.szu.afternoon5.softwareengineeringbackend.entity.Comment;
-import com.szu.afternoon5.softwareengineeringbackend.entity.Rating;
+import com.szu.afternoon5.softwareengineeringbackend.entity.*;
 import com.szu.afternoon5.softwareengineeringbackend.error.BusinessException;
 import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
-import com.szu.afternoon5.softwareengineeringbackend.event.CommentCreatedEvent;
-import com.szu.afternoon5.softwareengineeringbackend.event.CommentDeletedEvent;
-import com.szu.afternoon5.softwareengineeringbackend.event.RatingCreatedEvent;
-import com.szu.afternoon5.softwareengineeringbackend.event.RatingDeletedEvent;
-import com.szu.afternoon5.softwareengineeringbackend.repository.CommentRepository;
-import com.szu.afternoon5.softwareengineeringbackend.repository.PostRepository;
-import com.szu.afternoon5.softwareengineeringbackend.repository.RatingRepository;
+import com.szu.afternoon5.softwareengineeringbackend.event.*;
+import com.szu.afternoon5.softwareengineeringbackend.repository.*;
 import com.szu.afternoon5.softwareengineeringbackend.security.LoginPrincipal;
 import com.szu.afternoon5.softwareengineeringbackend.utils.PageableUtils;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -39,18 +35,30 @@ public class InteractionService {
     private final PageableUtils pageableUtils;
     private final ContentFilterService contentFilterService;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final UserRepository userRepository;
+    private final FollowRecordRepository followRecordRepository;
+    private final ConversationRepository conversationRepository;
+    private final ConversationOneToOneMapRepository conversationOneToOneMapRepository;
+    private final ParticipantRepository participantRepository;
+    private final MessageRepository messageRepository;
 
     /**
      * 构造互动服务，注入所需仓储与工具。
      */
     public InteractionService(RatingRepository ratingRepository, CommentRepository commentRepository,
-                              PostRepository postRepository, PageableUtils pageableUtils, ContentFilterService contentFilterService, ApplicationEventPublisher applicationEventPublisher) {
+                              PostRepository postRepository, PageableUtils pageableUtils, ContentFilterService contentFilterService, ApplicationEventPublisher applicationEventPublisher, UserRepository userRepository, FollowRecordRepository followRecordRepository, ConversationRepository conversationRepository, ConversationOneToOneMapRepository conversationOneToOneMapRepository, ParticipantRepository participantRepository, MessageRepository messageRepository) {
         this.ratingRepository = ratingRepository;
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.pageableUtils = pageableUtils;
         this.contentFilterService = contentFilterService;
         this.applicationEventPublisher = applicationEventPublisher;
+        this.userRepository = userRepository;
+        this.followRecordRepository = followRecordRepository;
+        this.conversationRepository = conversationRepository;
+        this.conversationOneToOneMapRepository = conversationOneToOneMapRepository;
+        this.participantRepository = participantRepository;
+        this.messageRepository = messageRepository;
     }
 
     /**
@@ -253,13 +261,172 @@ public class InteractionService {
     }
 
     private void checkPrincipalAndPostExist(LoginPrincipal loginPrincipal, Long postId) {
-        if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
-        }
-
+        checkPrincipal(loginPrincipal);
         // 检查帖子是否存在
         if (!postRepository.existsById(postId)) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "帖子不存在");
+        }
+    }
+
+    private LoginPrincipal checkPrincipal(LoginPrincipal loginPrincipal) {
+        if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return loginPrincipal;
+    }
+
+    @Transactional
+    public void followUser(Long userId, Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        if (!userRepository.existsByUserId(userId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "关注的用户不存在");
+        } else {
+            FollowRecord followRecord = new FollowRecord(loginPrincipal.getUserId(), userId);
+            followRecordRepository.save(followRecord);
+            applicationEventPublisher.publishEvent(new FollowCreatedEvent(followRecord.getFollowerId(), followRecord.getFolloweeId()));
+        }
+    }
+
+    @Transactional
+    public void unfollowUser(Long userId, Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        if (!userRepository.existsByUserId(userId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "关注的用户不存在");
+        } else if (!followRecordRepository.existsByFollowerIdAndFolloweeId(loginPrincipal.getUserId(), userId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "未关注此用户");
+        } else {
+            followRecordRepository.deleteByFollowerIdAndFolloweeId(loginPrincipal.getUserId(), userId);
+            applicationEventPublisher.publishEvent(new FollowDeletedEvent(loginPrincipal.getUserId(), userId));
+        }
+    }
+
+    public FollowStatusResponse getFollowStatus(Long userId, Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        if (!userRepository.existsByUserId(userId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "用户不存在");
+        } else {
+            return followRecordRepository.getFollowStatus(loginPrincipal.getUserId(), userId);
+        }
+    }
+
+    public InteractionUserListResponse getFollowing(Integer currentPage, Integer pageSize, Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        // TODO：预留前端排序的空间
+        List<String> sortColumns = List.of("follower_id", "followee_id", "created_time");
+        Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "followee_id", "ASC");
+
+        Page<UserInfo> userInfoPage = followRecordRepository.getFollowingUserInfo(loginPrincipal.getUserId(), pageable);
+        return new InteractionUserListResponse(
+                userInfoPage.getTotalPages(),
+                (int) userInfoPage.getTotalElements(),
+                userInfoPage.getNumber() + 1,
+                userInfoPage.getSize(),
+                userInfoPage.getContent()
+        );
+    }
+
+    public InteractionUserListResponse getFollowers(Integer currentPage, Integer pageSize, Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        // TODO：预留前端排序的空间
+        List<String> sortColumns = List.of("follower_id", "followee_id", "created_time");
+        Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "follower_id", "ASC");
+
+        Page<UserInfo> userInfoPage = followRecordRepository.getFollowerUserInfo(loginPrincipal.getUserId(), pageable);
+        return new InteractionUserListResponse(
+                userInfoPage.getTotalPages(),
+                (int) userInfoPage.getTotalElements(),
+                userInfoPage.getNumber() + 1,
+                userInfoPage.getSize(),
+                userInfoPage.getContent()
+        );
+    }
+
+    public FriendStatusResponse getFriendStatus(Long userId, Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        return followRecordRepository.getFriendStatus(userId, loginPrincipal.getUserId());
+    }
+
+    public InteractionUserListResponse getFriends(Integer currentPage, Integer pageSize, Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        // TODO：预留前端排序的空间
+        List<String> sortColumns = List.of("user_id", "nickname", "created_time", "updated_time", "comment_count", "post_count", "rating_count");
+        Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "user_id", "ASC");
+
+        Page<UserInfo> userInfoPage = followRecordRepository.getFriends(loginPrincipal.getUserId(), pageable);
+        return new InteractionUserListResponse(
+                userInfoPage.getTotalPages(),
+                (int) userInfoPage.getTotalElements(),
+                userInfoPage.getNumber() + 1,
+                userInfoPage.getSize(),
+                userInfoPage.getContent()
+        );
+    }
+
+    public ConversationListResponse getConversations(Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        List<ConversationDetail> conversationDetails = conversationRepository.getConversations(loginPrincipal.getUserId());
+        return new ConversationListResponse(conversationDetails);
+    }
+
+    @Transactional
+    public ConversationCreateResponse createConversation(@Valid ConversationCreateRequest request, Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        if (!userRepository.existsByUserId(loginPrincipal.getUserId())) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "用户不存在");
+        } else {
+            Long userLowId = Math.min(request.getUserId(), loginPrincipal.getUserId());
+            Long userHighId = Math.max(request.getUserId(), loginPrincipal.getUserId());
+            if (conversationOneToOneMapRepository.existsByUserLowIdAndUserHighId(userLowId, userHighId)) {
+                // 对话已存在，返回现有信息
+                Optional<ConversationDetail> conversationDetailOptional = conversationRepository.getConversation(loginPrincipal.getUserId(), request.getUserId());
+                if (conversationDetailOptional.isPresent()) {
+                    return new ConversationCreateResponse(conversationDetailOptional.get());
+                } else {
+                    throw new BusinessException(ErrorCode.NOT_FOUND, "对话不存在");
+                }
+            } else {
+                // 创建新对话
+                Conversation conversation = new Conversation();
+                Conversation savedConversation = conversationRepository.save(conversation);
+                ConversationOneToOneMap conversationOneToOneMap = new ConversationOneToOneMap(userLowId, userHighId, savedConversation.getConversationId());
+                Participant participantMe = new Participant(savedConversation.getConversationId(), loginPrincipal.getUserId());
+                Participant participantOther = new Participant(savedConversation.getConversationId(), request.getUserId());
+                conversationOneToOneMapRepository.save(conversationOneToOneMap);
+                participantRepository.save(participantMe);
+                participantRepository.save(participantOther);
+
+                return new ConversationCreateResponse(new ConversationDetail(savedConversation, participantMe, conversationOneToOneMap));
+            }
+        }
+    }
+
+    public ConversationMessageListResponse getConversationMessages(Long conversationId, Long beforeId, Long afterId, Integer limit, Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        if (conversationRepository.existsByConversationIdAndParticipantId(conversationId, loginPrincipal.getUserId())) {
+            List<MessageInfo> messageInfos;
+            if (limit != null) {
+                // 构建分页
+                PageRequest pageRequest = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdTime"));
+                messageInfos = messageRepository.getConversationMessages(conversationId, beforeId, afterId, pageRequest);
+            } else {
+                // 无需分页
+                Sort sort = Sort.by(Sort.Direction.DESC, "createdTime");
+                messageInfos = messageRepository.getConversationMessages(conversationId, beforeId, afterId, sort);
+            }
+            return new ConversationMessageListResponse(messageInfos);
+        } else {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "对话不存在");
+        }
+    }
+
+    public MessageSendResponse sendConversationMessage(Long conversationId, @Valid MessageSendRequest request, Authentication authentication) {
+        LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
+        if (conversationRepository.existsByConversationIdAndParticipantId(conversationId, loginPrincipal.getUserId())) {
+            Message message = new Message(conversationId, loginPrincipal.getUserId(), Message.MessageType.text, request.getText());
+            Message savedMessage = messageRepository.save(message);
+            return new MessageSendResponse(new MessageInfo(savedMessage));
+        } else {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "对话不存在");
         }
     }
 }

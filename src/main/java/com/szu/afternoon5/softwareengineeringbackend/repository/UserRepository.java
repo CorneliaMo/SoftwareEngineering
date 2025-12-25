@@ -96,4 +96,20 @@ public interface UserRepository extends JpaRepository<User,Long> {
         WHERE user_id = :userId
         """, nativeQuery = true)
     int setRatingCount(@Param("userId") Long userId, @Param("value") long value);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE "users"
+        SET follower_count = follower_count + :delta
+        WHERE user_id = :userId
+        """, nativeQuery = true)
+    int addFollowerCount(@Param("userId") Long userId, int delta);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE "users"
+        SET following_count = following_count + :delta
+        WHERE user_id = :userId
+        """, nativeQuery = true)
+    int addFollowingCount(@Param("userId") Long userId, int delta);
 }

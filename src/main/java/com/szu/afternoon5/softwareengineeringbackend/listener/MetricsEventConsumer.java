@@ -52,4 +52,16 @@ public class MetricsEventConsumer {
     public void onRatingDeleted(RatingDeletedEvent e) {
         metricsService.onRatingDelta(e.ratingId(), e.postId(), e.userId(), -1);
     }
+
+    @Async("eventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onFollowCreated(FollowCreatedEvent e) {
+        metricsService.onFollowDelta(e.followerId(), e.followeeId(), +1);
+    }
+
+    @Async("eventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onFollowDeleted(FollowDeletedEvent e) {
+        metricsService.onFollowDelta(e.followerId(), e.followeeId(), -1);
+    }
 }

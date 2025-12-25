@@ -50,6 +50,10 @@ public class User {
 
     private Integer ratingCount;
 
+    private Integer followerCount;
+
+    private Integer followingCount;
+
     /**
      * 创建用户的构造器，初始化启用状态与计数字段。
      */
@@ -67,6 +71,8 @@ public class User {
         this.commentCount = 0;
         this.postCount = 0;
         this.ratingCount = 0;
+        this.followerCount = 0;
+        this.followingCount = 0;
     }
 
     /**

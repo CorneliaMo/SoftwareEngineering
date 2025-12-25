@@ -73,6 +73,17 @@ public class MetricsService {
                 delta > 0 ? "+" : "-", ratingId, postId, userId, delta, postRows, userRows);
     }
 
+    @Transactional
+    public void onFollowDelta(Long followerId, Long followeeId, int delta) {
+        int userRows1 = userRepository.addFollowerCount(followeeId, delta);
+        int userRows2 = userRepository.addFollowingCount(followerId, delta);
+
+        // TODO：定时聚合
+
+        log.debug("[指标消费] follow{}1 已处理. followerId={}, followeeId={}, delta={}, userRows1={}, userRows2={}",
+                delta > 0 ? "+" : "-", followerId, followeeId, delta, userRows1, userRows2);
+    }
+
     // ------------------------
     // Dirty set
     // ------------------------
@@ -178,5 +189,4 @@ public class MetricsService {
     private static Map<Long, Long> toMap(List<IdCount> rows) {
         return rows.stream().collect(Collectors.toMap(IdCount::getId, IdCount::getCnt));
     }
-
 }
