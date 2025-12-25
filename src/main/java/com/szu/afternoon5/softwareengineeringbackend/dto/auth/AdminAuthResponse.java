@@ -20,12 +20,16 @@ public class AdminAuthResponse extends BaseResponse {
     @JsonProperty("admin")
     private AdminInfo admin;
 
-    @JsonProperty("jwt_token")
-    private String jwtToken;
+    @JsonProperty("access_token")
+    private String accessToken;
 
-    public AdminAuthResponse(Admin admin, String jwtToken) {
+    @JsonProperty("refresh_token")
+    private String refreshToken;
+
+    public AdminAuthResponse(Admin admin, String accessToken, String refreshToken) {
         super();
         this.admin = new AdminInfo(admin);
-        this.jwtToken = jwtToken;
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
     }
 }

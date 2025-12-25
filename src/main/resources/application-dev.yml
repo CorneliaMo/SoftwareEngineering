@@ -3,6 +3,12 @@ spring:
     url: ${DEV_DATABASE_URL}
     username: ${DEV_DATABASE_USERNAME}
     password: ${DEV_DATABASE_PASSWORD}
+  data:
+    redis:
+      host: ${DEV_REDIS_HOST}
+      port: ${DEV_REDIS_PORT}
+      password: ${DEV_REDIS_PASSWORD}
+      database: ${DEV_REDIS_DATABASE}
   sql:
     init:
       mode: always
@@ -13,6 +19,7 @@ logging:
   level:
     root: INFO
     org.springframework.web: DEBUG
+    com.szu.afternoon5.softwareengineeringbackend.service.MetricsService: DEBUG
 
 wx:
   test-jscode: TEST_TEST_ONLY_JSCODE
@@ -28,3 +35,7 @@ ali:
     access-key-secret: ${ALI_OSS_ACCESS_KEY_SECRET}
     bucket-name: ${ALI_OSS_BUCKET_NAME}
     cdn-host: ${ALI_OSS_CDN_HOST}
+
+builtin-super-admin:
+  username: superadmin
+  password: superadmin

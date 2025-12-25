@@ -110,4 +110,121 @@ public class InteractionController {
         interactionService.deleteComment(postId, request, authentication);
         return new BaseResponse();
     }
+
+    /**
+     * 关注用户
+     * POST /interactions/follows/{user_id}
+     */
+    @PostMapping("/follows/{user_id}")
+    public BaseResponse followUser(@PathVariable("user_id") Long userId, Authentication authentication) {
+        interactionService.followUser(userId, authentication);
+        return new BaseResponse();
+    }
+
+    /**
+     * 取消关注用户
+     * DELETE /interactions/follows/{user_id}
+     */
+    @DeleteMapping("/follows/{user_id}")
+    public BaseResponse unfollowUser(@PathVariable("user_id") Long userId, Authentication authentication) {
+        interactionService.unfollowUser(userId, authentication);
+        return new BaseResponse();
+    }
+
+    /**
+     * 查询是否关注某用户
+     * GET /interactions/follows/{user_id}
+     */
+    @GetMapping("/follows/{user_id}")
+    public FollowStatusResponse getFollowStatus(@PathVariable("user_id") Long userId, Authentication authentication) {
+        return interactionService.getFollowStatus(userId, authentication);
+    }
+
+    /**
+     * 我的关注列表
+     * GET /interactions/following
+     */
+    @GetMapping("/following")
+    public InteractionUserListResponse getFollowing(
+            @RequestParam(value = "current_page") Integer currentPage,
+            @RequestParam(value = "page_size") Integer pageSize,
+            Authentication authentication) {
+        return interactionService.getFollowing(currentPage, pageSize, authentication);
+    }
+
+    /**
+     * 我的粉丝列表
+     * GET /interactions/followers
+     */
+    @GetMapping("/followers")
+    public InteractionUserListResponse getFollowers(
+            @RequestParam(value = "current_page") Integer currentPage,
+            @RequestParam(value = "page_size") Integer pageSize,
+            Authentication authentication) {
+        return interactionService.getFollowers(currentPage, pageSize, authentication);
+    }
+
+    /**
+     * 我的好友列表
+     * GET /interactions/friends
+     */
+    @GetMapping("/friends")
+    public InteractionUserListResponse getFriends(
+            @RequestParam(value = "current_page") Integer currentPage,
+            @RequestParam(value = "page_size") Integer pageSize,
+            Authentication authentication) {
+        return interactionService.getFriends(currentPage, pageSize, authentication);
+    }
+
+    /**
+     * 查询是否为好友
+     * GET /interactions/friends/{user_id}
+     */
+    @GetMapping("/friends/{user_id}")
+    public FriendStatusResponse getFriendStatus(@PathVariable("user_id") Long userId, Authentication authentication) {
+        return interactionService.getFriendStatus(userId, authentication);
+    }
+
+    /**
+     * 会话列表
+     * GET /interactions/conversation
+     */
+    @GetMapping("/conversation")
+    public ConversationListResponse getConversations(Authentication authentication) {
+        return interactionService.getConversations(authentication);
+    }
+
+    /**
+     * 创建会话
+     * POST /interactions/conversation
+     */
+    @PostMapping("/conversation")
+    public ConversationCreateResponse createConversation(@Valid @RequestBody ConversationCreateRequest request,
+                                                         Authentication authentication) {
+        return interactionService.createConversation(request, authentication);
+    }
+
+    /**
+     * 会话消息列表
+     * GET /interactions/conversation/{conversation_id}/messages
+     */
+    @GetMapping("/conversation/{conversation_id}/messages")
+    public ConversationMessageListResponse getConversationMessages(@PathVariable("conversation_id") Long conversationId,
+                                                                   @RequestParam(value = "before_id", required = false) Long beforeId,
+                                                                   @RequestParam(value = "after_id", required = false) Long afterId,
+                                                                   @RequestParam(value = "limit", required = false) Integer limit,
+                                                                   Authentication authentication) {
+        return interactionService.getConversationMessages(conversationId, beforeId, afterId, limit, authentication);
+    }
+
+    /**
+     * 发送会话消息
+     * POST /interactions/conversation/{conversation_id}/messages
+     */
+    @PostMapping("/conversation/{conversation_id}/messages")
+    public MessageSendResponse sendConversationMessage(@PathVariable("conversation_id") Long conversationId,
+                                                       @Valid @RequestBody MessageSendRequest request,
+                                                       Authentication authentication) {
+        return interactionService.sendConversationMessage(conversationId, request, authentication);
+    }
 }

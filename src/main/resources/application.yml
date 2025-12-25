@@ -10,3 +10,8 @@ spring:
 wx:
   app-id: ${WX_APP_ID}
   app-secret: ${WX_APP_SECRET}
+
+metrics:
+  reconcile:
+    fixedDelayMs: 300000   # 5分钟
+    batchSize: 1000

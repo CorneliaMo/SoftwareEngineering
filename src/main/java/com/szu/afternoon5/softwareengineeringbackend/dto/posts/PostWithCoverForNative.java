@@ -42,6 +42,10 @@ public class PostWithCoverForNative {
 
     private Short sortOrder;
 
+    private Boolean hasImage;
+
+    private Boolean hasVideo;
+
     public Post getPost() {
         return new Post(
                 postId == null? null : Long.valueOf(postId),
@@ -54,7 +58,9 @@ public class PostWithCoverForNative {
                 updatedTime == null? null : updatedTime.toInstant(ZoneOffset.UTC),
                 ratingCount,
                 commentCount,
-                coverMediaId == null? null : Long.valueOf(coverMediaId));
+                coverMediaId == null? null : Long.valueOf(coverMediaId),
+                hasImage,
+                hasVideo);
     }
 
     public PostMedia getPostMedia() {

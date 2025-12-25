@@ -3,6 +3,12 @@ spring:
     url: ${PROD_DATABASE_URL}
     username: ${PROD_DATABASE_USERNAME}
     password: ${PROD_DATABASE_PASSWORD}
+  data:
+    redis:
+      host: ${PROD_REDIS_HOST}
+      port: ${PROD_REDIS_PORT}
+      password: ${PROD_REDIS_PASSWORD}
+      database: ${PROD_REDIS_DATABASE}
   sql:
     init:
       mode: never
@@ -26,3 +32,7 @@ ali:
     access-key-secret: ${ALI_OSS_ACCESS_KEY_SECRET}
     bucket-name: ${ALI_OSS_BUCKET_NAME}
     cdn-host: ${ALI_OSS_CDN_HOST}
+
+builtin-super-admin:
+  username: ${BUILTIN_SUPERADMIN_USERNAME}
+  password: ${BUILTIN_SUPERADMIN_PASSWORD}

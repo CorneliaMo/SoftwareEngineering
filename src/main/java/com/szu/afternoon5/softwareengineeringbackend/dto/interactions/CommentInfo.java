@@ -70,8 +70,14 @@ public class CommentInfo {
     @JsonProperty("updated_time")
     private Instant updatedTime;
 
+    /**
+     * 评论用户对该帖子的评分值（1-5分），如果用户未评分则为null。
+     */
+    @JsonProperty("rating")
+    private Integer rating;
+
     public CommentInfo(Long userId, String nickname, String avatarUrl, Long commentId, Long postId, Long parentId,
-                       String commentText, Instant createdTime, Instant updatedTime) {
+                       String commentText, Instant createdTime, Instant updatedTime, Integer rating) {
         this.userId = userId;
         this.nickname = nickname;
         this.avatarUrl = avatarUrl;
@@ -81,6 +87,7 @@ public class CommentInfo {
         this.commentText = commentText;
         this.createdTime = createdTime;
         this.updatedTime = updatedTime;
+        this.rating = rating;
     }
 
     public CommentInfo(Comment comment) {

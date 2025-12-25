@@ -1,8 +1,9 @@
 package com.szu.afternoon5.softwareengineeringbackend.security;
 
+import com.szu.afternoon5.softwareengineeringbackend.error.BusinessException;
+import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
 import com.szu.afternoon5.softwareengineeringbackend.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -65,13 +66,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     loginPrincipal = new LoginPrincipal(userId, adminId, LoginPrincipal.LoginType.admin);
                 } else {
                     // 不符合任何有效登录类型，抛出异常
-                    throw new JwtException("Invalid userLogin information.");
+                    throw new BusinessException(ErrorCode.TOKEN_INVALID);
                 }
                 authentication = new UsernamePasswordAuthenticationToken(loginPrincipal, null, null);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Throwable e) {
                 // token 无效
-                throw new JwtException("Invalid userLogin information.");
+                throw new BusinessException(ErrorCode.TOKEN_INVALID);
             }
         }
 

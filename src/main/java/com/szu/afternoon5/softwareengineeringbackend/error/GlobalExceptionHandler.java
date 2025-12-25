@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<BaseResponse> handleBusinessException(BusinessException e){
-        BaseResponse baseResponse = new BaseResponse(e.getErrorCode());
+        BaseResponse baseResponse = new BaseResponse(e.getErrorCode(), e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(baseResponse);
     }
 

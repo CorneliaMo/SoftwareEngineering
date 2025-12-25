@@ -43,8 +43,12 @@ public class PostWithCover {
 
     private Integer sortOrder;
 
+    private Boolean hasImage;
+
+    private Boolean hasVideo;
+
     public Post getPost() {
-        return new Post(postId, userId, postTitle, postText, isDeleted, deletedTime, createdTime, updatedTime, ratingCount, commentCount, coverMediaId);
+        return new Post(postId, userId, postTitle, postText, isDeleted, deletedTime, createdTime, updatedTime, ratingCount, commentCount, coverMediaId, hasImage, hasVideo);
     }
 
     public PostMedia getPostMedia() {

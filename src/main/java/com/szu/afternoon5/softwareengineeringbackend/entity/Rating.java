@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.annotation.Nullable;
 import java.time.Instant;
 
 /**
@@ -21,8 +22,10 @@ public class Rating {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long ratingId;
 
+    @Nullable
     private Long postId;
 
+    @Nullable
     private Long userId;
 
     private Integer ratingValue;

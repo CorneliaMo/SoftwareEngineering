@@ -20,12 +20,16 @@ public class UserAuthResponse extends BaseResponse {
     @JsonProperty("user")
     private UserDetail user;
 
-    @JsonProperty("jwt_token")
-    private String jwtToken;
+    @JsonProperty("access_token")
+    private String accessToken;
 
-    public UserAuthResponse(User user, String jwtToken) {
+    @JsonProperty("refresh_token")
+    private String refreshToken;
+
+    public UserAuthResponse(User user, String accessToken, String refreshToken) {
         super();
         this.user = new UserDetail(user);
-        this.jwtToken = jwtToken;
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
     }
 }

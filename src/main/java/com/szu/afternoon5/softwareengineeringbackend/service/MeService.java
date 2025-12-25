@@ -2,8 +2,11 @@ package com.szu.afternoon5.softwareengineeringbackend.service;
 
 import com.szu.afternoon5.softwareengineeringbackend.dto.auth.UserDetail;
 import com.szu.afternoon5.softwareengineeringbackend.dto.me.*;
+import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostMediaItem;
 import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover;
+import com.szu.afternoon5.softwareengineeringbackend.dto.posts.UploadMediaResponse;
 import com.szu.afternoon5.softwareengineeringbackend.entity.Comment;
+import com.szu.afternoon5.softwareengineeringbackend.entity.PostMedia;
 import com.szu.afternoon5.softwareengineeringbackend.entity.User;
 import com.szu.afternoon5.softwareengineeringbackend.error.BusinessException;
 import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
@@ -18,10 +21,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * 个人中心服务，负责处理用户个人信息管理、我的帖子、我的评论等功能。
@@ -33,16 +41,20 @@ public class MeService {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final PageableUtils pageableUtils;
+    private final OssService ossService;
+    private static final DateTimeFormatter DATE_PATH_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
     /**
      * 构造个人中心服务，注入所需仓储与工具。
      */
     public MeService(UserRepository userRepository, PostRepository postRepository,
-                     CommentRepository commentRepository, PageableUtils pageableUtils) {
+                     CommentRepository commentRepository, PageableUtils pageableUtils, OssService ossService) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.pageableUtils = pageableUtils;
+        this.ossService = ossService;
     }
 
     /**
@@ -188,6 +200,55 @@ public class MeService {
                     commentPage.getSize(),
                     comments
             );
+        }
+    }
+
+    @Transactional
+    public void uploadAvatar(UploadAvatarRequest request, Authentication authentication) {
+        LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
+        if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        } else {
+            Optional<User> userOptional = userRepository.findByUserId(loginPrincipal.getUserId());
+            if (userOptional.isEmpty()) {
+                throw new BusinessException(ErrorCode.NOT_FOUND, "用户不存在");
+            } else {
+                MultipartFile file = request.getAvatar();
+                if (file == null || file.isEmpty()) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "上传文件不能为空");
+                }
+                // 校验文件类型，保证仅图片可以上传
+                String contentType = file.getContentType();
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "仅支持图片上传");
+                }
+                // 1. 日期路径：2025/12/09
+                String datePath = LocalDate.now().format(DATE_PATH_FORMATTER);
+                // 2. 文件扩展名
+                String filename = file.getOriginalFilename();
+                if (filename == null || !filename.contains(".")) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "无法识别文件类型");
+                }
+                String ext = filename.substring(filename.lastIndexOf('.') + 1);
+                // 3. 随机文件名（避免重名）
+                String randomName = UUID.randomUUID().toString().replace("-", "");
+
+                // uploads/user/{category}/yyyy/MM/dd/{random}.{ext}
+                String filePath = String.format("uploads/user/%s/%s/%s.%s",
+                        "avatar",
+                        datePath,
+                        randomName,
+                        ext);
+
+                try {
+                    String url = ossService.upload(filePath, file, true);
+                    User user = userOptional.get();
+                    user.setAvatarUrl(url);
+                    userRepository.save(user);
+                } catch (IOException e) {
+                    throw new BusinessException(ErrorCode.INTERNAL_ERROR, "文件上传失败，请稍后再试");
+                }
+            }
         }
     }
 }
