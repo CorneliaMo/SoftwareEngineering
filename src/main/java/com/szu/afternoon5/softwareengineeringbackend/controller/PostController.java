@@ -1,13 +1,7 @@
 package com.szu.afternoon5.softwareengineeringbackend.controller;
 
 import com.szu.afternoon5.softwareengineeringbackend.dto.BaseResponse;
-import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostDetailResponse;
-import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostListResponse;
-import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostUpdateRequest;
-import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PublishPostRequest;
-import com.szu.afternoon5.softwareengineeringbackend.dto.posts.PublishPostResponse;
-import com.szu.afternoon5.softwareengineeringbackend.dto.posts.UploadMediaRequest;
-import com.szu.afternoon5.softwareengineeringbackend.dto.posts.UploadMediaResponse;
+import com.szu.afternoon5.softwareengineeringbackend.dto.posts.*;
 import com.szu.afternoon5.softwareengineeringbackend.service.PostMediaService;
 import com.szu.afternoon5.softwareengineeringbackend.service.PostService;
 import jakarta.validation.Valid;
@@ -114,9 +108,19 @@ public class PostController {
      * @return 操作结果
      */
     @DeleteMapping("/detail/{post_id}")
-    @PreAuthorize("@perm.isUser(authentication.principal) || @perm.isAdmin(authentication.principal)")
+    @PreAuthorize("@perm.isUser(authentication.principal)")
     public BaseResponse deletePost(@PathVariable("post_id") Long postId, Authentication authentication) {
         postService.deletePost(postId, authentication);
         return new BaseResponse();
+    }
+
+    /**
+     * 关注者内容流
+     */
+    @GetMapping("/timeline/following")
+    public GetFollowingTimelineResponse getFollowingTimeline(@RequestParam("current_page") Integer currentPage,
+                                                             @RequestParam("page_size") Integer pageSize,
+                                                             Authentication authentication) {
+        return postService.getFollowingTimeline(currentPage, pageSize, authentication);
     }
 }

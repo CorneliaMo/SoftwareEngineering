@@ -243,4 +243,18 @@ public class PostService {
             }
         }
     }
+
+    public GetFollowingTimelineResponse getFollowingTimeline(Integer currentPage, Integer pageSize, Authentication authentication) {
+        LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
+        if (loginPrincipal == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        } else {
+            List<String> sortColumns = List.of("post_title", "created_time", "updated_time", "rating_count", "comment_count");
+
+            // TODO：当前默认按帖子创建时间倒序排列，后续可以让前端自定义排序
+            Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "created_time", "DESC");
+            List<PostWithCover> postWithCovers = postRepository.getFollowingTimeline(loginPrincipal.getUserId(), pageable);
+            return new GetFollowingTimelineResponse(postWithCovers);
+        }
+    }
 }
