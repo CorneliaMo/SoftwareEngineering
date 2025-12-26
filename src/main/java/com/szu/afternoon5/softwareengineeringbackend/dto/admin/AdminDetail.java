@@ -17,6 +17,9 @@ import java.time.ZoneOffset;
 @ToString(callSuper = true)
 public class AdminDetail {
 
+    @JsonProperty("admin_id")
+    private Long adminId;
+
     @JsonProperty("username")
     private String username;
 
@@ -36,6 +39,7 @@ public class AdminDetail {
     private OffsetDateTime createdTime;
 
     public AdminDetail(Admin admin) {
+        this.adminId = admin.getAdminId();
         this.username = admin.getUsername();
         this.adminName = admin.getAdminName();
         this.role = admin.getRole();
