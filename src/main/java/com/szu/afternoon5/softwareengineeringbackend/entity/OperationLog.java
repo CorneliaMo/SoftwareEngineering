@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.annotation.Nullable;
 import java.time.Instant;
 
 /**
@@ -21,6 +22,7 @@ public class OperationLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long logId;
 
+    @Nullable
     private Long adminId;
 
     private String operationType;
@@ -29,8 +31,10 @@ public class OperationLog {
 
     private String targetType;
 
+    @Nullable
     private String operationDetail;
 
+    @Nullable
     private String ipAddress;
 
     private Instant createdTime;

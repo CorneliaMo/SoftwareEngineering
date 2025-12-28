@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.annotation.Nullable;
 import java.time.Instant;
 
 /**
@@ -21,14 +22,20 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
+    @Nullable
+    private String openid;
+
     private String username;
 
+    @Nullable
     private String password;
 
+    @Nullable
     private String email;
 
     private String nickname;
 
+    @Nullable
     private String avatarUrl;
 
     private Boolean status;
@@ -43,11 +50,16 @@ public class User {
 
     private Integer ratingCount;
 
+    private Integer followerCount;
+
+    private Integer followingCount;
+
     /**
      * 创建用户的构造器，初始化启用状态与计数字段。
      */
-    public User(String username, String password, String email, String nickname, String avatarUrl) {
+    public User(String username, String openid, String password, String email, String nickname, String avatarUrl) {
         this.userId = null;
+        this.openid = openid;
         this.username = username;
         this.password = password;
         this.email = email;
@@ -59,6 +71,8 @@ public class User {
         this.commentCount = 0;
         this.postCount = 0;
         this.ratingCount = 0;
+        this.followerCount = 0;
+        this.followingCount = 0;
     }
 
     /**

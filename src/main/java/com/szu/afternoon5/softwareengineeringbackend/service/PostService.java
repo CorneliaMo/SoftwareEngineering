@@ -4,6 +4,8 @@ import com.szu.afternoon5.softwareengineeringbackend.dto.posts.*;
 import com.szu.afternoon5.softwareengineeringbackend.entity.Post;
 import com.szu.afternoon5.softwareengineeringbackend.error.BusinessException;
 import com.szu.afternoon5.softwareengineeringbackend.error.ErrorCode;
+import com.szu.afternoon5.softwareengineeringbackend.event.PostCreatedEvent;
+import com.szu.afternoon5.softwareengineeringbackend.event.PostDeletedEvent;
 import com.szu.afternoon5.softwareengineeringbackend.repository.PostRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.TagRepository;
 import com.szu.afternoon5.softwareengineeringbackend.repository.UserRepository;
@@ -12,6 +14,7 @@ import com.szu.afternoon5.softwareengineeringbackend.utils.PageableUtils;
 import com.szu.afternoon5.softwareengineeringbackend.utils.SearchTextUtil;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -34,8 +37,10 @@ public class PostService {
     private final PageableUtils pageableUtils;
     private final JiebaService jiebaService;
     private final TagRepository tagRepository;
+    private final ContentFilterService contentFilterService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils, JiebaService jiebaService, TagRepository tagRepository) {
+    public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils, JiebaService jiebaService, TagRepository tagRepository, ContentFilterService contentFilterService, ApplicationEventPublisher applicationEventPublisher) {
         this.tagService = tagService;
         this.postMediaService = postMediaService;
         this.postRepository = postRepository;
@@ -43,6 +48,8 @@ public class PostService {
         this.pageableUtils = pageableUtils;
         this.jiebaService = jiebaService;
         this.tagRepository = tagRepository;
+        this.contentFilterService = contentFilterService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     /**
@@ -58,6 +65,13 @@ public class PostService {
         if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         } else {
+            // 进行内容过滤
+            ContentFilterService.FilterResult titleFilterResult, textFilterResult;
+            titleFilterResult = contentFilterService.filter(request.getPostTitle());
+            textFilterResult = contentFilterService.filter(request.getPostText());
+            if (textFilterResult.isMatched() || titleFilterResult.isMatched()) {
+                throw new BusinessException(ErrorCode.CONTENT_BLOCKED);
+            }
             Post post = new Post(loginPrincipal.getUserId(), request.getPostTitle(), request.getPostText());
             List<String> titleSegment = jiebaService.cutForIndex(post.getPostTitle());
             List<String> textSegment = jiebaService.cutForIndex(post.getPostText());
@@ -74,6 +88,8 @@ public class PostService {
                     post.getRatingCount(),
                     post.getCommentCount(),
                     post.getCoverMediaId(),
+                    post.getHasImage(),
+                    post.getHasVideo(),
                     SearchTextUtil.joinTokens(titleSegment),
                     SearchTextUtil.joinTokens(textSegment)
             );
@@ -81,6 +97,9 @@ public class PostService {
             // 通过postId绑定相应tag和media
             tagService.bindTagsToPost(newPostId, request.getTags());
             postMediaService.bindMediaToPost(newPostId, request.getMediaIds());
+            applicationEventPublisher.publishEvent(
+                    new PostCreatedEvent(post.getPostId(), loginPrincipal.getUserId())
+            );
             return new PublishPostResponse(new PostInfo(post));
         }
     }
@@ -132,7 +151,7 @@ public class PostService {
     }
 
     /**
-     * 更新帖子内容及标签，需要帖子作者或管理员权限。
+     * 更新帖子内容及标签，需要帖子作者。
      *
      * @param postId         帖子 ID
      * @param request        更新内容请求
@@ -150,12 +169,20 @@ public class PostService {
             } else {
                 PostUpdateContent postUpdateContent = request.getPost();
                 Post post = postOptional.get();
-                if ((loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user) && loginPrincipal.getUserId().equals(post.getUserId())) || (loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.admin))) {
+                if (loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user) && loginPrincipal.getUserId().equals(post.getUserId())) {
                     if (postUpdateContent.getPostTitle() != null && !postUpdateContent.getPostTitle().isEmpty()) {
                         post.setPostTitle(postUpdateContent.getPostTitle());
                     }
                     if (postUpdateContent.getPostText() != null && !postUpdateContent.getPostText().isEmpty()) {
                         post.setPostText(postUpdateContent.getPostText());
+                    }
+
+                    // 进行内容过滤
+                    ContentFilterService.FilterResult titleFilterResult, textFilterResult;
+                    titleFilterResult = contentFilterService.filter(postUpdateContent.getPostTitle());
+                    textFilterResult = contentFilterService.filter(postUpdateContent.getPostText());
+                    if (textFilterResult.isMatched() || titleFilterResult.isMatched()) {
+                        throw new BusinessException(ErrorCode.CONTENT_BLOCKED);
                     }
 
                     // 更新分词索引
@@ -179,8 +206,9 @@ public class PostService {
                     );
                     // 在保存基础信息后同步更新标签
                     tagService.updatePostTags(post.getPostId(), request.getTags());
+                    postMediaService.bindMediaToPost(post.getPostId(), request.getMediaIds());
                 } else {
-                    throw new BusinessException(ErrorCode.FORBIDDEN, "只有帖子作者或管理员可以修改");
+                    throw new BusinessException(ErrorCode.FORBIDDEN, "只有帖子作者可以修改");
                 }
             }
         }
@@ -210,12 +238,27 @@ public class PostService {
                         // 设置软删除并记录删除时间
                         post.setIsDeleted(true);
                         post.setDeletedTime(Instant.now());
+                        applicationEventPublisher.publishEvent(new PostDeletedEvent(post.getPostId(), loginPrincipal.getUserId()));
                         postRepository.save(post);
                     }
                 } else {
                     throw new BusinessException(ErrorCode.FORBIDDEN, "只有帖子作者或管理员可以删除");
                 }
             }
+        }
+    }
+
+    public GetFollowingTimelineResponse getFollowingTimeline(Integer currentPage, Integer pageSize, Authentication authentication) {
+        LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
+        if (loginPrincipal == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        } else {
+            List<String> sortColumns = List.of("post_title", "created_time", "updated_time", "rating_count", "comment_count");
+
+            // TODO：当前默认按帖子创建时间倒序排列，后续可以让前端自定义排序
+            Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "created_time", "DESC");
+            List<PostWithCover> postWithCovers = postRepository.getFollowingTimeline(loginPrincipal.getUserId(), pageable);
+            return new GetFollowingTimelineResponse(postWithCovers);
         }
     }
 }

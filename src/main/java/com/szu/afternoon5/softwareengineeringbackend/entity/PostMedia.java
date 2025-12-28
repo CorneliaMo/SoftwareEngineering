@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.annotation.Nullable;
+
 /**
  * 帖子媒体实体，记录图片或视频等资源信息。
  * <p>
@@ -19,8 +21,10 @@ public class PostMedia {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long mediaId;
 
+    @Nullable
     private Long postId;
 
+    @Nullable
     private Long uploadUserId;
 
     private String mediaUrl;
@@ -29,6 +33,7 @@ public class PostMedia {
     private MediaType mediaType;
 
     // 用于指示媒体在帖子中的顺序
+    @Nullable
     private Integer sortOrder;
 
     public enum MediaType {

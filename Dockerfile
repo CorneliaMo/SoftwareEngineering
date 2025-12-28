@@ -1,7 +1,7 @@
 # =========================
 # 1️⃣ 构建阶段：用 JDK + Gradle 构建 jar
 # =========================
-FROM eclipse-temurin:17-jdk-alpine AS build
+FROM eclipse-temurin:17-jdk-jammy AS build
 
 # 可选的代理参数（名字跟常见环境变量对齐）
 ARG HTTP_PROXY
@@ -41,7 +41,7 @@ RUN ./gradlew clean bootJar -x test --no-daemon
 # =========================
 # 2️⃣ 运行阶段：用 JRE 轻量运行
 # =========================
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM eclipse-temurin:17-jre-jammy AS runtime
 
 # 给 Spring Boot 一个固定工作目录
 WORKDIR /app

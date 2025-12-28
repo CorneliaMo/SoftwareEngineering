@@ -1,9 +1,15 @@
 package com.szu.afternoon5.softwareengineeringbackend.controller;
 
+import com.szu.afternoon5.softwareengineeringbackend.dto.BaseResponse;
+import com.szu.afternoon5.softwareengineeringbackend.dto.interactions.InteractionUserListResponse;
+import com.szu.afternoon5.softwareengineeringbackend.dto.users.BindWechatRequest;
 import com.szu.afternoon5.softwareengineeringbackend.dto.users.SearchUserResponse;
 import com.szu.afternoon5.softwareengineeringbackend.dto.users.UserInfoResponse;
 import com.szu.afternoon5.softwareengineeringbackend.dto.users.UserStatResponse;
+import com.szu.afternoon5.softwareengineeringbackend.service.InteractionService;
 import com.szu.afternoon5.softwareengineeringbackend.service.UserService;
+import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -18,9 +24,11 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final InteractionService interactionService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, InteractionService interactionService) {
         this.userService = userService;
+        this.interactionService = interactionService;
     }
 
     /**
@@ -56,5 +64,48 @@ public class UserController {
             @RequestParam("keyword") String keyword) {
 
         return userService.searchUsers(currentPage, pageSize, keyword);
+    }
+
+    /**
+     * 永久注销账号
+     * POST /users/deactive
+     */
+    @PostMapping("/deactive")
+    public BaseResponse deactiveUser(Authentication authentication) {
+        userService.requestDeletion(authentication);
+        return new BaseResponse();
+    }
+
+    /**
+     * 绑定微信
+     * PUT /users/bind-wechat
+     */
+    @PutMapping("/bind-wechat")
+    public BaseResponse bindWechat(@Valid @RequestBody BindWechatRequest request,
+                                   Authentication authentication) {
+        userService.bindWechat(request, authentication);
+        return new BaseResponse();
+    }
+
+    /**
+     * 获取用户关注列表
+     * GET /users/{user_id}/following
+     */
+    @GetMapping("/{user_id}/following")
+    public InteractionUserListResponse getUserFollowing(@PathVariable("user_id") Long userId,
+                                                   @RequestParam(value = "current_page") Integer currentPage,
+                                                   @RequestParam(value = "page_size") Integer pageSize) {
+        return interactionService.getFollowing(currentPage, pageSize, userId);
+    }
+
+    /**
+     * 获取用户粉丝列表
+     * GET /users/{user_id}/followers
+     */
+    @GetMapping("/{user_id}/followers")
+    public InteractionUserListResponse getUserFollowers(@PathVariable("user_id") Long userId,
+                                                        @RequestParam(value = "current_page") Integer currentPage,
+                                                        @RequestParam(value = "page_size") Integer pageSize) {
+        return interactionService.getFollowers(currentPage, pageSize, userId);
     }
 }

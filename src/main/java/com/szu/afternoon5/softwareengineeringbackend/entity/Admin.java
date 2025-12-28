@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.annotation.Nullable;
 import java.time.Instant;
 
 /**
@@ -21,18 +22,22 @@ public class Admin {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long adminId;
 
+    @Nullable
     private Long userId;
 
     private String username;
 
     private String password;
 
+    @Nullable
     private String adminName;
 
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private AdminRole role;
 
     private Boolean status;
 
+    @Nullable
     private Instant lastLogin;
 
     private Instant createdTime;
@@ -40,7 +45,7 @@ public class Admin {
     /**
      * 默认构造方法，初始化基础字段并将状态设为启用。
      */
-    public Admin(Long userId, String username, String password, String adminName, String role) {
+    public Admin(Long userId, String username, String password, String adminName, AdminRole role) {
         this.adminId = null;
         this.userId = userId;
         this.username = username;
@@ -60,5 +65,9 @@ public class Admin {
         if (this.createdTime == null) {
             this.createdTime = Instant.now();
         }
+    }
+
+    public enum AdminRole {
+        admin, superadmin
     }
 }

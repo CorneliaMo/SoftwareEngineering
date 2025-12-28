@@ -141,6 +141,7 @@ public class PostMediaService {
             throw new BusinessException(ErrorCode.CONFLICT, "附件已被其他帖子引用");
         } else {
             if (!mediaIds.isEmpty()) {
+                boolean hasImage = false, hasVideo = false;
                 // fix：以mediaIds的顺序为基准
                 Map<Long, Integer> orderMap =
                         IntStream.range(0, mediaIds.size())
@@ -157,9 +158,11 @@ public class PostMediaService {
                         postMedia.setSortOrder(order);
                     }
                     postMedia.setPostId(postId);
+                    if (postMedia.getMediaType().equals(PostMedia.MediaType.image)) hasImage = true;
+                    if (postMedia.getMediaType().equals(PostMedia.MediaType.video)) hasVideo = true;
                 }
                 postMediaRepository.saveAll(postMedias);
-                postRepository.updatePostCover(postId, mediaIds.get(0));
+                postRepository.updatePostCover(postId, mediaIds.get(0), hasImage, hasVideo);
             }
         }
     }

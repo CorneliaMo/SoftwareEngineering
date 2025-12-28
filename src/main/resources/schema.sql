@@ -1,21 +1,26 @@
 CREATE TABLE IF NOT EXISTS "users" (
-	"user_id" SERIAL NOT NULL,
-	"username" VARCHAR(50) NOT NULL,
-	"password" VARCHAR(255) NOT NULL,
-	"email" VARCHAR(100) NULL DEFAULT NULL,
-	"nickname" VARCHAR(50) NOT NULL,
-	"avatar_url" VARCHAR(255) NULL DEFAULT NULL,
-	"status" BOOLEAN NOT NULL DEFAULT true,
-	"created_time" TIMESTAMP NOT NULL,
-	"updated_time" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	"comment_count" INTEGER NOT NULL DEFAULT 0,
-	"post_count" INTEGER NOT NULL DEFAULT 0,
-	"rating_count" INTEGER NOT NULL DEFAULT 0,
-	PRIMARY KEY ("user_id")
+                         "user_id" SERIAL NOT NULL,
+                         "openid" VARCHAR(512) NULL DEFAULT NULL::character varying,
+                         "username" VARCHAR(50) NOT NULL,
+                         "password" VARCHAR(255) NULL DEFAULT NULL::character varying,
+                         "email" VARCHAR(100) NULL DEFAULT NULL::character varying,
+                         "nickname" VARCHAR(50) NOT NULL,
+                         "avatar_url" VARCHAR(255) NULL DEFAULT NULL::character varying,
+                         "status" BOOLEAN NOT NULL DEFAULT true,
+                         "created_time" TIMESTAMP NOT NULL,
+                         "updated_time" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                         "comment_count" INTEGER NOT NULL DEFAULT 0,
+                         "post_count" INTEGER NOT NULL DEFAULT 0,
+                         "rating_count" INTEGER NOT NULL DEFAULT 0,
+                         "follower_count" INTEGER NOT NULL DEFAULT 0,
+                         "following_count" INTEGER NOT NULL DEFAULT 0,
+                         PRIMARY KEY ("user_id"),
+                         UNIQUE ("openid")
 )
 ;
 COMMENT ON TABLE "users" IS '用户表，储存用户信息';
 COMMENT ON COLUMN "users"."user_id" IS '用户id';
+COMMENT ON COLUMN "users"."openid" IS '微信OpenID，通过微信登录获取';
 COMMENT ON COLUMN "users"."username" IS '用户名';
 COMMENT ON COLUMN "users"."password" IS '用户密码（已hash加盐）';
 COMMENT ON COLUMN "users"."email" IS '用户邮箱';
@@ -27,6 +32,8 @@ COMMENT ON COLUMN "users"."updated_time" IS '更新时间';
 COMMENT ON COLUMN "users"."comment_count" IS '用户的评论数量';
 COMMENT ON COLUMN "users"."post_count" IS '用户的帖子数量';
 COMMENT ON COLUMN "users"."rating_count" IS '用户的评分数量';
+COMMENT ON COLUMN "users"."follower_count" IS '粉丝数量';
+COMMENT ON COLUMN "users"."following_count" IS '关注数量';
 CREATE INDEX IF NOT EXISTS "username_password" ON "users" ("username", "password");
 
 CREATE TABLE IF NOT EXISTS "posts" (
@@ -42,7 +49,11 @@ CREATE TABLE IF NOT EXISTS "posts" (
 	"comment_count" INTEGER NOT NULL DEFAULT 0,
     "cover_media_id" INTEGER NULL DEFAULT NULL,
     "text_query"   tsvector,
-	PRIMARY KEY ("post_id")
+    "has_image" BOOLEAN NOT NULL DEFAULT false,
+    "has_video" BOOLEAN NOT NULL DEFAULT false,
+	PRIMARY KEY ("post_id"),
+    CONSTRAINT "FK_posts_post_media" FOREIGN KEY ("cover_media_id") REFERENCES "post_media" ("media_id") ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT "FK_posts_users" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL
 )
 ;
 COMMENT ON TABLE "posts" IS '帖子表，储存用户发表的帖子';
@@ -60,6 +71,8 @@ COMMENT ON COLUMN "posts"."cover_media_id" IS '冗余字段，储存封面对应
 CREATE INDEX IF NOT EXISTS "fk__posts__users" ON "posts" ("user_id");
 -- 创建GIN索引需要在数据库中以postgres用户执行 CREATE EXTENSION pg_trgm;
 CREATE INDEX IF NOT EXISTS "idx_posts_text_query" ON "posts" USING gin ("text_query");
+CREATE INDEX IF NOT EXISTS idx_posts_user_active ON posts(user_id) WHERE is_deleted = false;
+
 
 CREATE TABLE IF NOT EXISTS "post_media" (
 	"media_id" SERIAL NOT NULL,
@@ -114,6 +127,9 @@ COMMENT ON COLUMN "comments"."updated_time" IS '更新时间';
 CREATE INDEX IF NOT EXISTS "fk_comments_posts" ON "comments" ("post_id");
 CREATE INDEX IF NOT EXISTS "fk_comments_users" ON "comments" ("user_id");
 CREATE INDEX IF NOT EXISTS "fk_comments_comments" ON "comments" ("parent_id");
+CREATE INDEX IF NOT EXISTS idx_comments_post_active ON comments(post_id) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS idx_comments_user_active ON comments(user_id) WHERE is_deleted = false;
+
 
 CREATE TABLE IF NOT EXISTS "tags" (
 	"tag_id" SERIAL NOT NULL,
@@ -163,6 +179,9 @@ COMMENT ON COLUMN "ratings"."created_time" IS '创建时间';
 COMMENT ON COLUMN "ratings"."updated_time" IS '更新时间';
 CREATE INDEX IF NOT EXISTS "fk__ratings__posts" ON "ratings" ("post_id");
 CREATE INDEX IF NOT EXISTS "fk__ratings__users" ON "ratings" ("user_id");
+CREATE INDEX IF NOT EXISTS idx_ratings_post ON ratings(post_id);
+CREATE INDEX IF NOT EXISTS idx_ratings_user ON ratings(user_id);
+
 
 CREATE TABLE IF NOT EXISTS "admins" (
 	"admin_id" SERIAL NOT NULL,
@@ -175,6 +194,7 @@ CREATE TABLE IF NOT EXISTS "admins" (
 	"last_login" TIMESTAMP NULL,
 	"created_time" TIMESTAMP NOT NULL,
 	PRIMARY KEY ("admin_id"),
+    UNIQUE ("username"),
 	CONSTRAINT "fk_admins_users" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE SET NULL
 )
 ;
@@ -215,3 +235,126 @@ COMMENT ON COLUMN "operation_logs"."ip_address" IS '操作IP地址';
 COMMENT ON COLUMN "operation_logs"."created_time" IS '操作时间';
 CREATE INDEX IF NOT EXISTS "fk__operation_logs__admins" ON "operation_logs" ("admin_id");
 
+CREATE TABLE IF NOT EXISTS "follows" (
+                           "follower_id" INTEGER NOT NULL,
+                           "followee_id" INTEGER NOT NULL,
+                           "created_time" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                           PRIMARY KEY ("follower_id", "followee_id"),
+                           CONSTRAINT "FK_follows_users" FOREIGN KEY ("follower_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE CASCADE,
+                           CONSTRAINT "FK_follows_users_2" FOREIGN KEY ("followee_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE CASCADE
+)
+;
+COMMENT ON TABLE "follows" IS '储存关注记录，按照自连接判断互相关注';
+COMMENT ON COLUMN "follows"."follower_id" IS '关注者id';
+COMMENT ON COLUMN "follows"."followee_id" IS '被关注者id';
+COMMENT ON COLUMN "follows"."created_time" IS '关注时间';
+CREATE INDEX IF NOT EXISTS "idx_follower" ON "follows" ("follower_id", "created_time");
+CREATE INDEX IF NOT EXISTS "idx_followee" ON "follows" ("followee_id", "created_time");
+
+CREATE TABLE IF NOT EXISTS "conversations" (
+                                 "conversation_id" SERIAL NOT NULL,
+                                 "created_time" TIMESTAMP NOT NULL,
+                                 "updated_time" TIMESTAMP NOT NULL,
+                                 "last_message_id" INTEGER NULL DEFAULT NULL,
+                                 "last_message_time" TIMESTAMP NULL DEFAULT NULL,
+                                 PRIMARY KEY ("conversation_id")
+)
+;
+COMMENT ON TABLE "conversations" IS '会话记录表，目前暂时一个会话 = 两个用户的固定对话';
+COMMENT ON COLUMN "conversations"."conversation_id" IS '对话id';
+COMMENT ON COLUMN "conversations"."created_time" IS '创建时间';
+COMMENT ON COLUMN "conversations"."updated_time" IS '更新时间';
+COMMENT ON COLUMN "conversations"."last_message_id" IS '最新消息id';
+COMMENT ON COLUMN "conversations"."last_message_time" IS '最新消息时间，用来做会话列表排序';
+
+CREATE TABLE IF NOT EXISTS "messages" (
+                            "message_id" SERIAL NOT NULL,
+                            "conversation_id" INTEGER NOT NULL,
+                            "sender_id" INTEGER NOT NULL,
+                            "msg_type" VARCHAR(50) NOT NULL,
+                            "content" VARCHAR(1024) NOT NULL,
+                            "created_time" TIMESTAMP NOT NULL,
+                            "is_recalled" BOOLEAN NOT NULL DEFAULT false,
+                            "recalled_time" TIMESTAMP NULL DEFAULT NULL,
+                            PRIMARY KEY ("message_id"),
+                            CONSTRAINT "FK__conversations" FOREIGN KEY ("conversation_id") REFERENCES "conversations" ("conversation_id") ON UPDATE CASCADE ON DELETE CASCADE,
+                            CONSTRAINT "FK__users" FOREIGN KEY ("sender_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE CASCADE
+)
+;
+COMMENT ON TABLE "messages" IS '消息表';
+COMMENT ON COLUMN "messages"."message_id" IS '消息id';
+COMMENT ON COLUMN "messages"."conversation_id" IS '对话id';
+COMMENT ON COLUMN "messages"."sender_id" IS '发送者用户id';
+COMMENT ON COLUMN "messages"."msg_type" IS '消息类型，text 文本，(预留图片/文件)';
+COMMENT ON COLUMN "messages"."content" IS '文本内容';
+COMMENT ON COLUMN "messages"."created_time" IS '创建时间';
+COMMENT ON COLUMN "messages"."is_recalled" IS '是否撤回，软删除/撤回（可选）';
+COMMENT ON COLUMN "messages"."recalled_time" IS '撤回时间';
+
+CREATE TABLE IF NOT EXISTS "participants" (
+                                "record_id" SERIAL NOT NULL,
+                                "conversation_id" INTEGER NOT NULL,
+                                "user_id" INTEGER NOT NULL,
+                                "last_read_message_id" INTEGER NULL DEFAULT NULL,
+                                "last_read_time" TIMESTAMP NULL DEFAULT NULL,
+                                "is_hidden" BOOLEAN NOT NULL DEFAULT false,
+                                "hidden_time" TIMESTAMP NULL DEFAULT NULL,
+                                "created_time" TIMESTAMP NOT NULL,
+                                "updated_time" TIMESTAMP NOT NULL,
+                                PRIMARY KEY ("record_id"),
+                                UNIQUE ("conversation_id", "user_id"),
+                                CONSTRAINT "FK__conversations" FOREIGN KEY ("conversation_id") REFERENCES "conversations" ("conversation_id") ON UPDATE CASCADE ON DELETE CASCADE,
+                                CONSTRAINT "FK__users" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE CASCADE,
+                                CONSTRAINT "FK__messages" FOREIGN KEY ("last_read_message_id") REFERENCES "messages" ("message_id") ON UPDATE CASCADE ON DELETE SET NULL
+)
+;
+COMMENT ON TABLE "participants" IS '一条会话里每个用户一行，用来存“已读到哪、是否删除会话、未读数”等“用户视角状态”';
+COMMENT ON COLUMN "participants"."record_id" IS '记录id';
+COMMENT ON COLUMN "participants"."conversation_id" IS '对话id，外键对应对话表';
+COMMENT ON COLUMN "participants"."user_id" IS '用户id';
+COMMENT ON COLUMN "participants"."last_read_message_id" IS '已读游标，读到哪条消息了';
+COMMENT ON COLUMN "participants"."last_read_time" IS '已读时间';
+COMMENT ON COLUMN "participants"."is_hidden" IS '是否隐藏，会话对用户的软删除/隐藏';
+COMMENT ON COLUMN "participants"."hidden_time" IS '隐藏时间';
+COMMENT ON COLUMN "participants"."created_time" IS '创建时间';
+COMMENT ON COLUMN "participants"."updated_time" IS '更新时间';
+
+CREATE TABLE IF NOT EXISTS "conversation_one_to_one_map" (
+                                               "user_low_id" INTEGER NOT NULL,
+                                               "user_high_id" INTEGER NOT NULL,
+                                               "conversation_id" INTEGER NOT NULL,
+                                               "created_time" TIMESTAMP NOT NULL,
+                                               UNIQUE ("user_low_id", "user_high_id", "conversation_id"),
+                                               CONSTRAINT "FK__users" FOREIGN KEY ("user_low_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE CASCADE,
+                                               CONSTRAINT "FK__users_2" FOREIGN KEY ("user_high_id") REFERENCES "users" ("user_id") ON UPDATE CASCADE ON DELETE CASCADE,
+                                               CONSTRAINT "FK__conversations" FOREIGN KEY ("conversation_id") REFERENCES "conversations" ("conversation_id") ON UPDATE CASCADE ON DELETE CASCADE
+)
+;
+COMMENT ON TABLE "conversation_one_to_one_map" IS '解决“我和你只能有一个会话”的问题，不然并发下容易创建两个会话';
+COMMENT ON COLUMN "conversation_one_to_one_map"."user_low_id" IS '用户id，较小的参与者id';
+COMMENT ON COLUMN "conversation_one_to_one_map"."user_high_id" IS '用户id，较大的参与者id';
+COMMENT ON COLUMN "conversation_one_to_one_map"."conversation_id" IS '对话id';
+COMMENT ON COLUMN "conversation_one_to_one_map"."created_time" IS '创建时间';
+
+CREATE TABLE IF NOT EXISTS "user_deletion_requests" (
+                                          "request_id" SERIAL NOT NULL,
+                                          "user_id" INTEGER NOT NULL,
+                                          "requested_time" TIMESTAMP NOT NULL,
+                                          "execute_after" TIMESTAMP NOT NULL,
+                                          "status" VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+                                          "processed_time" TIMESTAMP NULL DEFAULT NULL,
+                                          "fail_reason" TEXT NULL DEFAULT NULL,
+                                          PRIMARY KEY ("request_id"),
+                                          UNIQUE ("user_id"),
+                                          CONSTRAINT "user_deletion_requests_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON UPDATE NO ACTION ON DELETE CASCADE
+)
+;
+COMMENT ON TABLE "user_deletion_requests" IS '记录用户注销的请求，在期限结束后删除所有数据';
+COMMENT ON COLUMN "user_deletion_requests"."request_id" IS '请求id';
+COMMENT ON COLUMN "user_deletion_requests"."user_id" IS '用户id';
+COMMENT ON COLUMN "user_deletion_requests"."requested_time" IS '申请时间';
+COMMENT ON COLUMN "user_deletion_requests"."execute_after" IS '预计执行时间';
+COMMENT ON COLUMN "user_deletion_requests"."status" IS 'PENDING / PROCESSING / DONE / CANCELLED / FAILED';
+COMMENT ON COLUMN "user_deletion_requests"."processed_time" IS '完成时间';
+COMMENT ON COLUMN "user_deletion_requests"."fail_reason" IS '失败原因';
+CREATE INDEX IF NOT EXISTS "idx_user_deletion_requests_due" ON "user_deletion_requests" ("status", "execute_after");

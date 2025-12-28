@@ -24,8 +24,12 @@ public class PostUpdateRequest {
     @JsonProperty("tags")
     private List<String> tags;
 
-    public PostUpdateRequest(PostUpdateContent post, List<String> tags) {
+    @JsonProperty("media_ids")
+    private List<Long> mediaIds;
+
+    public PostUpdateRequest(PostUpdateContent post, List<String> tags, List<Long> mediaIds) {
         this.post = post;
         this.tags = tags;
+        this.mediaIds = mediaIds;
     }
 }

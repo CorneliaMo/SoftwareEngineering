@@ -1,12 +1,7 @@
 package com.szu.afternoon5.softwareengineeringbackend.controller;
 
-import com.szu.afternoon5.softwareengineeringbackend.dto.BaseResponse;
-import com.szu.afternoon5.softwareengineeringbackend.dto.auth.AdminAuthResponse;
-import com.szu.afternoon5.softwareengineeringbackend.dto.auth.AdminLoginRequest;
-import com.szu.afternoon5.softwareengineeringbackend.dto.auth.LoginRequest;
-import com.szu.afternoon5.softwareengineeringbackend.dto.auth.RegisterRequest;
-import com.szu.afternoon5.softwareengineeringbackend.dto.auth.ResetPasswordRequest;
-import com.szu.afternoon5.softwareengineeringbackend.dto.auth.UserAuthResponse;
+import com.szu.afternoon5.softwareengineeringbackend.dto.auth.*;
+import com.szu.afternoon5.softwareengineeringbackend.service.SecurityService;
 import com.szu.afternoon5.softwareengineeringbackend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,9 +22,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UserService userService;
+    private final SecurityService securityService;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, SecurityService securityService) {
         this.userService = userService;
+        this.securityService = securityService;
+    }
+
+    @PostMapping("/wechat-login")
+    public UserAuthResponse wechatLogin(@Valid @RequestBody WechatLoginRequest request) {
+        return userService.wechatLogin(request);
+    }
+
+    /**
+     * 刷新令牌
+     * @param request 刷新令牌请求体
+     * @return 新的访问令牌，如果刷新令牌即将过期，也会返回新的刷新令牌
+     */
+    @PostMapping("/refresh-token")
+    public RefreshTokenResponse refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        return securityService.refreshAccessToken(request);
     }
 
     /**
@@ -61,9 +73,8 @@ public class AuthController {
      */
     @PutMapping("/reset-password")
     @PreAuthorize("isAuthenticated()")
-    public BaseResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request, Authentication authentication) {
-        userService.resetPassword(request, authentication);
-        return new BaseResponse();
+    public ResetPasswordResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request, Authentication authentication) {
+        return userService.resetPassword(request, authentication);
     }
 
     /**

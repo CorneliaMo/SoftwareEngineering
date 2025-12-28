@@ -27,7 +27,7 @@ public class AdminInfo {
     private String adminName;
 
     @JsonProperty("role")
-    private String role;
+    private Admin.AdminRole role;
 
     public AdminInfo(Admin admin) {
         this.adminId = admin.getAdminId();
