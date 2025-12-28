@@ -43,14 +43,14 @@ public interface FollowRecordRepository extends JpaRepository<FollowRecord, Long
     FollowStatusResponse getFollowStatus(@Param("me") Long me, @Param("other") Long other);
 
     @Query("""
-    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.UserInfo(u.userId, u.nickname, u.avatarUrl) FROM FollowRecord fr
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.UserInfo(u.userId, u.nickname, u.avatarUrl, u.followingCount, u.followerCount) FROM FollowRecord fr
     JOIN User u ON fr.followeeId = u.userId
     WHERE fr.followerId = :userId
 """)
     Page<UserInfo> getFollowingUserInfo(Long userId, Pageable pageable);
 
     @Query("""
-    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.UserInfo(u.userId, u.nickname, u.avatarUrl) FROM FollowRecord fr
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.UserInfo(u.userId, u.nickname, u.avatarUrl, u.followingCount, u.followerCount) FROM FollowRecord fr
     JOIN User u ON fr.followerId = u.userId
     WHERE fr.followeeId = :userId
 """)
@@ -78,7 +78,7 @@ public interface FollowRecordRepository extends JpaRepository<FollowRecord, Long
     FriendStatusResponse getFriendStatus(Long me, Long other);
 
     @Query("""
-    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.UserInfo(u.userId, u.nickname, u.avatarUrl)
+    SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.UserInfo(u.userId, u.nickname, u.avatarUrl, u.followingCount, u.followerCount)
     FROM User u
     WHERE EXISTS (
         SELECT 1 FROM FollowRecord f1

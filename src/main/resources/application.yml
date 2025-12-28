@@ -6,6 +6,10 @@ spring:
     driver-class-name: org.postgresql.Driver
   jackson:
     property-naming-strategy: SNAKE_CASE
+  servlet:
+    multipart:
+      max-file-size: 512MB
+      max-request-size: 512MB
 
 wx:
   app-id: ${WX_APP_ID}

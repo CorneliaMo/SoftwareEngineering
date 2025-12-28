@@ -31,9 +31,23 @@ public class UserInfo {
     @JsonProperty("avatar_url")
     private String avatarUrl;
 
-    public UserInfo(Long userId, String nickname, String avatarUrl) {
+    /**
+     * 关注数量
+     */
+    @JsonProperty("following_count")
+    private Integer followingCount;
+
+    /**
+     * 粉丝数量
+     */
+    @JsonProperty("follower_count")
+    private Integer followerCount;
+
+    public UserInfo(Long userId, String nickname, String avatarUrl, Integer followingCount, Integer followerCount) {
         this.userId = userId;
         this.nickname = nickname;
         this.avatarUrl = avatarUrl;
+        this.followingCount = followingCount;
+        this.followerCount = followerCount;
     }
 }
