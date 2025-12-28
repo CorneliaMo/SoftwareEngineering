@@ -83,6 +83,7 @@ public class UserService {
             throw new BusinessException(ErrorCode.NOT_FOUND, "用户不存在");
         } else {
             User user = userOptional.get();
+            checkUserHasDeletionRequest(user.getUserId(), null);
             if (!PasswordUtil.matches(request.getPassword(), user.getPassword())) {
                 throw new BusinessException(ErrorCode.TOKEN_INVALID, "密码错误");
             } else {
@@ -224,6 +225,7 @@ public class UserService {
     public UserAuthResponse wechatLogin(@Valid WechatLoginRequest request) {
         String openid = wechatUtils.getOpenid(request.getJscode());
         if (openid != null) {
+            checkUserHasDeletionRequest(null, openid);
             Optional<User> userOptional = userRepository.findByOpenid(openid);
             User user;
             if (userOptional.isEmpty()) {
@@ -353,6 +355,13 @@ public class UserService {
                 userDeletionRequestRepository.markResult(r.getRequestId(), UserDeletionRequest.DeletionRequestStatus.FAILED, Instant.now(),
                         ex.getClass().getSimpleName() + ": " + ex.getMessage());
             }
+        }
+    }
+
+    // 检查用户是否处于注销处理期
+    private void checkUserHasDeletionRequest(Long userId, String openid) {
+        if (userDeletionRequestRepository.existsByUserIdOrOpenid(userId, openid)) {
+            throw new BusinessException(ErrorCode.USER_DELETION_PENDING);
         }
     }
 }

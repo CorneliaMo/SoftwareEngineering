@@ -39,4 +39,12 @@ public interface UserDeletionRequestRepository extends JpaRepository<UserDeletio
                    @Param("status") UserDeletionRequest.DeletionRequestStatus status,
                    @Param("processedAt") Instant processedAt,
                    @Param("failReason") String failReason);
+
+    @Query("""
+    SELECT (COUNT(u) > 0) FROM UserDeletionRequest r
+    JOIN User u ON r.userId = u.userId
+    WHERE (:userId IS NOT NULL AND r.userId = :userId)
+        OR (:openid IS NOT NULL AND u.openid = :openid)
+""")
+    boolean existsByUserIdOrOpenid(Long userId, String openid);
 }
