@@ -19,6 +19,9 @@ public class UserDetail {
     @JsonProperty("user_id")
     private Long userId;
 
+    @JsonProperty("openid")
+    private String openid;
+
     @JsonProperty("username")
     private String username;
 
@@ -45,6 +48,7 @@ public class UserDetail {
 
     public UserDetail(User user) {
         this.userId = user.getUserId();
+        this.openid = user.getOpenid();
         this.username = user.getUsername();
         this.email = user.getEmail();
         this.nickname = user.getNickname();
@@ -55,10 +59,11 @@ public class UserDetail {
         this.commentCount = user.getCommentCount();
     }
 
-    public UserDetail(Long userId, String username, String email, String nickname,
+    public UserDetail(Long userId, String openid, String username, String email, String nickname,
                       String avatarUrl, Instant createdTime, Integer postCount,
                       Integer ratingCount, Integer commentCount) {
         this.userId = userId;
+        this.openid = openid;
         this.username = username;
         this.email = email;
         this.nickname = nickname;

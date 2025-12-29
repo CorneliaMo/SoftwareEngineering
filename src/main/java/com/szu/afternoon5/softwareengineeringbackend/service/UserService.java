@@ -84,6 +84,9 @@ public class UserService {
         } else {
             User user = userOptional.get();
             checkUserHasDeletionRequest(user.getUserId(), null);
+            if (!user.getStatus()) {
+                throw new BusinessException(ErrorCode.FORBIDDEN, "用户已被禁用");
+            }
             if (!PasswordUtil.matches(request.getPassword(), user.getPassword())) {
                 throw new BusinessException(ErrorCode.TOKEN_INVALID, "密码错误");
             } else {
@@ -154,6 +157,9 @@ public class UserService {
             throw new BusinessException(ErrorCode.NOT_FOUND, "用户不存在");
         } else {
             Admin admin = adminOptional.get();
+            if (!admin.getStatus()) {
+                throw new BusinessException(ErrorCode.FORBIDDEN, "管理员已被禁用");
+            }
             if (!PasswordUtil.matches(request.getPassword(), admin.getPassword())) {
                 throw new BusinessException(ErrorCode.TOKEN_INVALID, "密码错误");
             } else {
@@ -242,6 +248,9 @@ public class UserService {
             } else {
                 // 已注册用户，直接登录
                 user = userOptional.get();
+                if (!user.getStatus()) {
+                    throw new BusinessException(ErrorCode.FORBIDDEN, "用户已被禁用");
+                }
             }
             LoginPrincipal loginPrincipal = new LoginPrincipal(user.getUserId(), null, LoginPrincipal.LoginType.user);
             String refreshToken = securityService.issueRefreshToken(loginPrincipal);

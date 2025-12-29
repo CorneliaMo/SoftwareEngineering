@@ -200,7 +200,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     @Query("""
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
     LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
-    WHERE p.userId = :userId AND p.isDeleted = FALSE
+    WHERE p.userId = :userId AND p.isDeleted = :isDeleted
 """)
     Page<PostWithCover> findByUserIdAndIsDeleted(Long userId, boolean isDeleted, Pageable pageable);
 
@@ -224,6 +224,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     WHERE (:userId IS NULL OR p.userId = :userId)
         AND (CAST(:startDate AS timestamp) IS NULL OR p.createdTime >= :startDate)
         AND (CAST(:endDate AS timestamp) IS NULL OR p.createdTime <= :endDate)
+        AND (p.isDeleted = FALSE)
 """)
     Page<PostWithCover> findAllWithCoverByOptionalStartDateEndDateUserId(Long userId, Instant startDate, Instant endDate, Pageable pageable);
 
@@ -276,7 +277,7 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     WHERE p.userId = ANY(
         SELECT fr.followeeId FROM FollowRecord fr
         WHERE fr.followerId = :me
-    )
+    ) AND p.isDeleted = FALSE
 """)
     List<PostWithCover> getFollowingTimeline(Long me, Pageable pageable);
 }
