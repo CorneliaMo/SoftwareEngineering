@@ -280,6 +280,8 @@ public class InteractionService {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
         if (!userRepository.existsByUserId(userId)) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "关注的用户不存在");
+        } else if (followRecordRepository.existsByFollowerIdAndFolloweeId(loginPrincipal.getUserId(), userId)) {
+            throw new BusinessException(ErrorCode.SUCCESS);
         } else {
             FollowRecord followRecord = new FollowRecord(loginPrincipal.getUserId(), userId);
             followRecordRepository.save(followRecord);
@@ -379,7 +381,7 @@ public class InteractionService {
     @Transactional
     public ConversationCreateResponse createConversation(@Valid ConversationCreateRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
-        if (!userRepository.existsByUserId(loginPrincipal.getUserId())) {
+        if (!userRepository.existsByUserId(loginPrincipal.getUserId()) || !userRepository.existsByUserId(request.getUserId())) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "用户不存在");
         } else {
             Long userLowId = Math.min(request.getUserId(), loginPrincipal.getUserId());

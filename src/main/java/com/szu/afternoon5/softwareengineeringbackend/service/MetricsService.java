@@ -130,7 +130,7 @@ public class MetricsService {
 
     private List<Long> popDirtyIds(String key, int count) {
         // Spring Data Redis 支持一次 pop 多个（底层用 SPOP count）
-        Set<String> popped = new HashSet<>(redis.opsForSet().pop(key, count));
+        Set<String> popped = new HashSet<>(Objects.requireNonNullElse(redis.opsForSet().pop(key, count), Collections.emptySet()));
         if (popped.isEmpty()) return List.of();
 
         List<Long> ids = new ArrayList<>(popped.size());
