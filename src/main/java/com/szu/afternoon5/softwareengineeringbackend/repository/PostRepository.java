@@ -131,6 +131,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
             @Param("bodySeg") String bodySeg
     );
 
+    /**
+     * 按时间范围搜索帖子列表。
+     */
     @Query("""
         SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
         LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
@@ -144,6 +147,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
                                  Long userId,
                                  Pageable pageable);
 
+    /**
+     * 按标签搜索帖子列表。
+     */
     @Query("""
         SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
         JOIN PostTag pt ON p.postId = pt.postId
@@ -157,6 +163,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
                                Long userId,
                                Pageable pageable);
 
+    /**
+     * 全文搜索帖子列表。
+     */
     @Query(value = """
             SELECT p.post_id, p.user_id, p.post_title, p.post_text, p.is_deleted, p.deleted_time, p.created_time, p.updated_time, p.rating_count, p.comment_count, p.cover_media_id, pm.upload_user_id, pm.media_url, pm.media_type, pm.sort_order, p.has_image, p.has_video FROM posts p
             LEFT JOIN post_media pm ON p.cover_media_id = pm.media_id
@@ -189,6 +198,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
                                                 @Param("userId") Long userId,
                                                 Pageable pageable);
 
+    /**
+     * 更新帖子封面及媒体类型标识。
+     */
     @Modifying
     @Query(value = """
     UPDATE Post p
@@ -197,6 +209,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
     """)
     void updatePostCover(Long postId, Long coverMediaId, Boolean hasImage, Boolean hasVideo);
 
+    /**
+     * 查询用户帖子列表（不携带封面）。
+     */
     @Query("""
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
     LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
@@ -204,8 +219,14 @@ public interface PostRepository extends JpaRepository<Post,Long> {
 """)
     Page<PostWithCover> findByUserIdAndIsDeleted(Long userId, boolean isDeleted, Pageable pageable);
 
+    /**
+     * 批量查询指定ID的帖子。
+     */
     List<Post> findAllByPostIdIn(@NotEmpty List<Long> postIds);
 
+    /**
+     * 按条件查询帖子列表（管理员检索）。
+     */
     @Query("""
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
     LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
@@ -218,6 +239,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
 """)
     Page<PostWithCover> findAllWithCoverByOptionalUserIdUsernameNicknamePostType(Pageable pageable, Long userId, String username, String nickname, Boolean hasImage, Boolean hasVideo);
 
+    /**
+     * 按时间范围与用户条件查询帖子列表。
+     */
     @Query("""
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
     LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId
@@ -228,6 +252,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
 """)
     Page<PostWithCover> findAllWithCoverByOptionalStartDateEndDateUserId(Long userId, Instant startDate, Instant endDate, Pageable pageable);
 
+    /**
+     * 增量更新帖子评论计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE posts
@@ -236,6 +263,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
         """, nativeQuery = true)
     int addCommentCount(@Param("postId") Long postId, @Param("delta") long delta);
 
+    /**
+     * 增量更新帖子评分计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE posts
@@ -246,6 +276,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
 
     // --- 回写校准值（避免循环 save 导致并发丢失）---
 
+    /**
+     * 校准并设置帖子评论计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE posts
@@ -254,6 +287,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
         """, nativeQuery = true)
     int setCommentCount(@Param("postId") Long postId, @Param("value") long value);
 
+    /**
+     * 校准并设置帖子评分计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE posts
@@ -262,6 +298,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
         """, nativeQuery = true)
     int setRatingCount(@Param("postId") Long postId, @Param("value") long value);
 
+    /**
+     * 统计指定用户列表的帖子数量。
+     */
     @Query(value = """
         SELECT p.user_id AS id, COUNT(*)::bigint AS cnt
         FROM posts p
@@ -271,6 +310,9 @@ public interface PostRepository extends JpaRepository<Post,Long> {
         """, nativeQuery = true)
     List<IdCount> countByUserIds(@Param("userIds") Long[] userIds);
 
+    /**
+     * 获取关注用户的时间线帖子。
+     */
     @Query("""
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.posts.PostWithCover(p.postId, p.userId, p.postTitle, p.postText, p.isDeleted, p.deletedTime, p.createdTime, p.updatedTime, p.ratingCount, p.commentCount, p.coverMediaId, pm.uploadUserId, pm.mediaUrl, pm.mediaType, pm.sortOrder, p.hasImage, p.hasVideo) FROM Post p
     LEFT JOIN PostMedia pm ON p.coverMediaId = pm.mediaId

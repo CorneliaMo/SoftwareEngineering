@@ -8,6 +8,9 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
+/**
+ * 原生查询帖子与封面媒体的聚合视图
+ */
 @Data
 @AllArgsConstructor
 public class PostWithCoverForNative {
@@ -46,6 +49,9 @@ public class PostWithCoverForNative {
 
     private Boolean hasVideo;
 
+    /**
+     * 转换为帖子实体
+     */
     public Post getPost() {
         return new Post(
                 postId == null? null : Long.valueOf(postId),
@@ -63,6 +69,9 @@ public class PostWithCoverForNative {
                 hasVideo);
     }
 
+    /**
+     * 转换为媒体实体
+     */
     public PostMedia getPostMedia() {
         return new PostMedia(
                 coverMediaId == null ? null : Long.valueOf(coverMediaId),

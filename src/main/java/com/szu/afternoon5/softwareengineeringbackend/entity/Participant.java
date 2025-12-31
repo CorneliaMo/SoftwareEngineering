@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 import javax.annotation.Nullable;
 import java.time.Instant;
 
+/**
+ * 会话参与者实体
+ */
 @Data
 @Entity
 @NoArgsConstructor

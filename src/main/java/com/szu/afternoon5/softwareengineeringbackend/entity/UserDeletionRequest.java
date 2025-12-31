@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
 
+/**
+ * 用户注销请求实体
+ */
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor

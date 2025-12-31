@@ -20,6 +20,9 @@ public class InteractionController {
 
     private final InteractionService interactionService;
 
+    /**
+     * 构建互动控制器并注入依赖。
+     */
     public InteractionController(InteractionService interactionService) {
         this.interactionService = interactionService;
     }

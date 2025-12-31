@@ -34,6 +34,9 @@ public class AdminController {
     private final AdminService adminService;
     private final ContentFilterService contentFilterService;
 
+    /**
+     * 构建管理端控制器并注入依赖。
+     */
     public AdminController(AdminService adminService, ContentFilterService contentFilterService) {
         this.adminService = adminService;
         this.contentFilterService = contentFilterService;

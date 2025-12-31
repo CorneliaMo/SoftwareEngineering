@@ -168,6 +168,15 @@ public class SearchService {
                 .collect(Collectors.joining(" "));
     }
 
+    /**
+     * 构建帖子分页请求。
+     *
+     * @param currentPage 当前页码
+     * @param pageSize    每页数量
+     * @param sortBy      排序字段
+     * @param order       排序方向
+     * @return 分页请求
+     */
     private Pageable buildPostPageRequest(Integer currentPage, Integer pageSize, String sortBy, String order) {
         List<String> sortColumns = List.of("post_title", "created_time", "updated_time", "rating_count", "comment_count");
         return pageableUtils.buildPageable(sortColumns, currentPage, pageSize, sortBy, order);

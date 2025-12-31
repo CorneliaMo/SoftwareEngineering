@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * 刷新令牌请求体
+ */
 @Getter
 @Setter
 @ToString(callSuper = true)

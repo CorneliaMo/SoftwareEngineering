@@ -38,6 +38,9 @@ public class PostService {
     private final ContentFilterService contentFilterService;
     private final ApplicationEventPublisher applicationEventPublisher;
 
+    /**
+     * 构建帖子服务并注入依赖。
+     */
     public PostService(TagService tagService, PostMediaService postMediaService, PostRepository postRepository, UserRepository userRepository, PageableUtils pageableUtils, JiebaService jiebaService, ContentFilterService contentFilterService, ApplicationEventPublisher applicationEventPublisher) {
         this.tagService = tagService;
         this.postMediaService = postMediaService;
@@ -244,6 +247,14 @@ public class PostService {
         }
     }
 
+    /**
+     * 获取关注者动态时间线。
+     *
+     * @param currentPage    当前页码
+     * @param pageSize       每页数量
+     * @param authentication 认证信息
+     * @return 关注动态响应
+     */
     public GetFollowingTimelineResponse getFollowingTimeline(Integer currentPage, Integer pageSize, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
         if (loginPrincipal == null) {

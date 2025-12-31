@@ -5,6 +5,9 @@ import com.szu.afternoon5.softwareengineeringbackend.dto.BaseResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+/**
+ * 重置密码响应体
+ */
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class ResetPasswordResponse extends BaseResponse {

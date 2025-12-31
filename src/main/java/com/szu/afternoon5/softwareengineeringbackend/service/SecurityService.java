@@ -14,6 +14,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 令牌安全服务，负责刷新令牌校验与签发
+ */
 @Service
 public class SecurityService {
 
@@ -27,11 +30,17 @@ public class SecurityService {
     private final JwtUtils jwtUtils;
     private final StringRedisTemplate stringRedisTemplate;
 
+    /**
+     * 构建安全服务并注入依赖。
+     */
     public SecurityService(JwtUtils jwtUtils, StringRedisTemplate stringRedisTemplate) {
         this.jwtUtils = jwtUtils;
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
+    /**
+     * 校验刷新令牌并签发新的访问令牌
+     */
     public RefreshTokenResponse refreshAccessToken(RefreshTokenRequest request) {
         String trimmedToken = request.getRefreshToken().trim();
         String key = buildRefreshKey(trimmedToken);
@@ -60,20 +69,26 @@ public class SecurityService {
         return new RefreshTokenResponse(accessToken, refreshTokenToReturn);
     }
 
-    /**
+    /*
      * 通过登录上下文信息签发访问令牌，其格式与单Token时相同
      * @param loginPrincipal 登录上下文
      * @return String 访问令牌
+     */
+    /**
+     * 生成访问令牌
      */
     public String issueAccessToken(LoginPrincipal loginPrincipal) {
         Date expiration = new Date(System.currentTimeMillis() + ACCESS_TOKEN_TTL_MILLIS);
         return jwtUtils.generateToken(loginPrincipal.getUserId(), loginPrincipal.getAdminId(), loginPrincipal.getLoginType(), expiration);
     }
 
-    /**
+    /*
      * 通过登录上下文签发刷新令牌
      * @param loginPrincipal 登录上下文
      * @return String 刷新令牌
+     */
+    /**
+     * 生成刷新令牌并写入索引
      */
     public String issueRefreshToken(LoginPrincipal loginPrincipal) {
         String refreshToken = UUID.randomUUID().toString().replace("-", "");
@@ -85,10 +100,16 @@ public class SecurityService {
     }
 
     // 构造刷新令牌Key
+    /**
+     * 构造刷新令牌存储键
+     */
     private String buildRefreshKey(String refreshToken) {
         return REFRESH_TOKEN_KEY_PREFIX + refreshToken;
     }
 
+    /**
+     * 构造刷新令牌索引键
+     */
     private String buildRefreshIndexKey(LoginPrincipal loginPrincipal) {
         if (loginPrincipal == null || loginPrincipal.getLoginType() == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "无效的登录上下文");
@@ -103,15 +124,21 @@ public class SecurityService {
     }
 
     // 为用户的刷新令牌建立索引，便于一次性注销
+    /**
+     * 建立刷新令牌索引，便于注销
+     */
     private void indexRefreshToken(LoginPrincipal loginPrincipal, String refreshToken) {
         String indexKey = buildRefreshIndexKey(loginPrincipal);
         stringRedisTemplate.opsForSet().add(indexKey, refreshToken);
         stringRedisTemplate.expire(indexKey, REFRESH_TOKEN_TTL_MILLIS, TimeUnit.MILLISECONDS);
     }
 
-    /**
+    /*
      * 提供登录上下文，注销对应的所有刷新令牌
      * @param loginPrincipal 登录上下文
+     */
+    /**
+     * 注销登录上下文对应的所有刷新令牌
      */
     public void revokeRefreshTokens(LoginPrincipal loginPrincipal) {
         String indexKey = buildRefreshIndexKey(loginPrincipal);
@@ -125,6 +152,9 @@ public class SecurityService {
     }
 
     // 通过登录上下文构造Redis中的储存值
+    /**
+     * 构造刷新令牌存储值
+     */
     private String buildRefreshValue(LoginPrincipal loginPrincipal) {
         String userId = loginPrincipal.getUserId() == null ? "" : loginPrincipal.getUserId().toString();
         String adminId = loginPrincipal.getAdminId() == null ? "" : loginPrincipal.getAdminId().toString();
@@ -132,6 +162,9 @@ public class SecurityService {
     }
 
     // 从Redis储存值中解析出登录上下文
+    /**
+     * 解析刷新令牌存储值
+     */
     private LoginPrincipal parseRefreshValue(String value) {
         String[] parts = value.split("\\|", -1);
         if (parts.length != 3) {
@@ -159,6 +192,9 @@ public class SecurityService {
     }
 
     // 解析Long的工具方法，防止NullPointerException
+    /**
+     * 解析可空的长整型字段
+     */
     private Long parseNullableLong(String value) {
         if (value == null || value.isBlank()) {
             return null;

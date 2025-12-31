@@ -6,6 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 用户注销清理服务，负责物理删除用户相关数据。
+ */
 @Slf4j
 @Service
 public class UserDeletionService {

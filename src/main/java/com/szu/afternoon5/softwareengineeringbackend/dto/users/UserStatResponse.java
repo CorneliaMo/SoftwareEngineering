@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * 用户统计信息响应体
+ */
 @Getter
 @Setter
 @ToString(callSuper = true)

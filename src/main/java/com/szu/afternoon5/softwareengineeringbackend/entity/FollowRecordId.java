@@ -5,6 +5,9 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
+/**
+ * 关注关系复合主键
+ */
 @NoArgsConstructor
 @EqualsAndHashCode
 public class FollowRecordId implements Serializable {

@@ -32,6 +32,9 @@ public class PostController {
     private final PostMediaService postMediaService;
     private final PostService postService;
 
+    /**
+     * 构建帖子控制器并注入依赖。
+     */
     public PostController(PostMediaService postMediaService, PostService postService) {
         this.postMediaService = postMediaService;
         this.postService = postService;

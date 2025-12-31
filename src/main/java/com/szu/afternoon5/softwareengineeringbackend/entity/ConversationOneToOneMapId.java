@@ -5,6 +5,9 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
+/**
+ * 一对一会话映射复合主键
+ */
 @NoArgsConstructor
 @EqualsAndHashCode
 public class ConversationOneToOneMapId implements Serializable {

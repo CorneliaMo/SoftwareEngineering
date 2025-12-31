@@ -5,6 +5,9 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
+/**
+ * 帖子标签复合主键
+ */
 @NoArgsConstructor
 @EqualsAndHashCode
 public class PostTagId implements Serializable {

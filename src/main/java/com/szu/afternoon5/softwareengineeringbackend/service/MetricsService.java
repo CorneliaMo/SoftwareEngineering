@@ -13,6 +13,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 指标统计服务，负责计数增量处理与定时校准。
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -39,6 +42,14 @@ public class MetricsService {
     // 事件消费入口（给 Consumer 调用）
     // ------------------------
 
+    /**
+     * 处理评论数增量事件。
+     *
+     * @param commentId 评论ID
+     * @param postId    帖子ID
+     * @param userId    用户ID
+     * @param delta     变化量
+     */
     @Transactional
     public void onCommentDelta(Long commentId, Long postId, Long userId, int delta) {
         int postRows = postRepository.addCommentCount(postId, delta);
@@ -51,6 +62,13 @@ public class MetricsService {
                 delta > 0 ? "+" : "-", commentId, postId, userId, delta, postRows, userRows);
     }
 
+    /**
+     * 处理帖子数增量事件。
+     *
+     * @param postId 帖子ID
+     * @param userId 用户ID
+     * @param delta  变化量
+     */
     @Transactional
     public void onPostDelta(Long postId, Long userId, int delta) {
         int userRows = userRepository.addPostCount(userId, delta);
@@ -61,6 +79,14 @@ public class MetricsService {
                 delta > 0 ? "+" : "-", postId, userId, delta, userRows);
     }
 
+    /**
+     * 处理评分数增量事件。
+     *
+     * @param ratingId 评分ID
+     * @param postId   帖子ID
+     * @param userId   用户ID
+     * @param delta    变化量
+     */
     @Transactional
     public void onRatingDelta(Long ratingId, Long postId, Long userId, int delta) {
         int postRows = postRepository.addRatingCount(postId, delta);
@@ -73,6 +99,13 @@ public class MetricsService {
                 delta > 0 ? "+" : "-", ratingId, postId, userId, delta, postRows, userRows);
     }
 
+    /**
+     * 处理关注关系增量事件。
+     *
+     * @param followerId 关注者ID
+     * @param followeeId 被关注者ID
+     * @param delta      变化量
+     */
     @Transactional
     public void onFollowDelta(Long followerId, Long followeeId, int delta) {
         int userRows1 = userRepository.addFollowerCount(followeeId, delta);
@@ -88,11 +121,21 @@ public class MetricsService {
     // Dirty set
     // ------------------------
 
+    /**
+     * 标记帖子计数需要校准。
+     *
+     * @param postId 帖子ID
+     */
     private void markDirtyPost(Long postId) {
         if (postId == null) return;
         redis.opsForSet().add(DIRTY_POST_KEY, String.valueOf(postId));
     }
 
+    /**
+     * 标记用户计数需要校准。
+     *
+     * @param userId 用户ID
+     */
     private void markDirtyUser(Long userId) {
         if (userId == null) return;
         redis.opsForSet().add(DIRTY_USER_KEY, String.valueOf(userId));
@@ -101,12 +144,15 @@ public class MetricsService {
     // ------------------------
     // 定时聚合（校准冗余计数）
     // ------------------------
-    /**
+    /*
      * 每隔一段时间校准一次：只校准“dirty 的 user / post”
      * <p>
      * 注意：
      * - 这个任务是“兜底”，不追求 100% 实时
      * - 为避免影响主业务：批量处理 + 控制 batchSize
+     */
+    /**
+     * 定时校准脏数据的计数。
      */
     @Scheduled(fixedDelayString = "${metrics.reconcile.fixedDelayMs:300000}") // 默认 5 分钟
     @Transactional
@@ -128,6 +174,13 @@ public class MetricsService {
         log.debug("[指标校准] reconcile 完成. postIds={}, userIds={}", postIds.size(), userIds.size());
     }
 
+    /**
+     * 从脏集合中批量弹出ID并转换为数字。
+     *
+     * @param key   Redis集合键
+     * @param count 最大弹出数量
+     * @return ID列表
+     */
     private List<Long> popDirtyIds(String key, int count) {
         // Spring Data Redis 支持一次 pop 多个（底层用 SPOP count）
         Set<String> popped = new HashSet<>(Objects.requireNonNullElse(redis.opsForSet().pop(key, count), Collections.emptySet()));
@@ -145,6 +198,11 @@ public class MetricsService {
     // ------------------------
     // 校准：Post（commentCount / ratingCount）
     // ------------------------
+    /**
+     * 校准帖子相关计数。
+     *
+     * @param postIds 待校准的帖子ID列表
+     */
     private void reconcilePosts(List<Long> postIds) {
         // 1) 重算 comment_count（只算这些 post）
         Map<Long, Long> commentCounts = toMap(commentRepository.countByPostIds(postIds.toArray(new Long[0])));
@@ -167,6 +225,11 @@ public class MetricsService {
     // ------------------------
     // 校准：User（commentCount / postCount / ratingCount）
     // ------------------------
+    /**
+     * 校准用户相关计数。
+     *
+     * @param userIds 待校准的用户ID列表
+     */
     private void reconcileUsers(List<Long> userIds) {
         Map<Long, Long> commentCounts = toMap(commentRepository.countByUserIds(userIds.toArray(new Long[0])));
         Map<Long, Long> postCounts = toMap(postRepository.countByUserIds(userIds.toArray(new Long[0])));
@@ -186,6 +249,12 @@ public class MetricsService {
                 userIds.size(), commentCounts.size(), postCounts.size(), ratingCounts.size());
     }
 
+    /**
+     * 将聚合结果转换为ID到计数的映射。
+     *
+     * @param rows 聚合结果列表
+     * @return ID到计数的映射
+     */
     private static Map<Long, Long> toMap(List<IdCount> rows) {
         return rows.stream().collect(Collectors.toMap(IdCount::getId, IdCount::getCnt));
     }

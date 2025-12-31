@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
+/**
+ * 关注关系实体
+ */
 @Data
 @Entity
 @NoArgsConstructor

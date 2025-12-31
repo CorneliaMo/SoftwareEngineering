@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * 上传头像请求体
+ */
 @Data
 public class UploadAvatarRequest {
 

@@ -39,6 +39,9 @@ public class PostMediaService {
     private final PostRepository postRepository;
 
 
+    /**
+     * 构建媒体服务并注入依赖。
+     */
     public PostMediaService(PostMediaRepository postMediaRepository, OssService ossService, PostRepository postRepository) {
         this.postMediaRepository = postMediaRepository;
         this.ossService = ossService;

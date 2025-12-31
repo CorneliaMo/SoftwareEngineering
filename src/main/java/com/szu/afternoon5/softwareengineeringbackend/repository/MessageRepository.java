@@ -18,6 +18,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     AND (:beforeId IS NULL OR m.messageId <= :beforeId)
     AND (m.isRecalled = false)
 """)
+    /*
+      获取会话消息列表（分页版本）。
+     */
     List<MessageInfo> getConversationMessages(Long conversationId, Long beforeId, Long afterId, PageRequest pageRequest);
 
     @Query("""
@@ -27,5 +30,8 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     AND (:beforeId IS NULL OR m.messageId <= :beforeId)
     AND (m.isRecalled = false)
 """)
+    /*
+      获取会话消息列表（排序版本）。
+     */
     List<MessageInfo> getConversationMessages(Long conversationId, Long beforeId, Long afterId, Sort sort);
 }

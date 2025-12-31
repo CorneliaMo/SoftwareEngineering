@@ -30,6 +30,9 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * 用户与管理员认证、资料管理及注销流程服务。
+ */
 @Slf4j
 @Service
 public class UserService {
@@ -45,6 +48,9 @@ public class UserService {
     private final UserDeletionRequestRepository userDeletionRequestRepository;
     private final UserDeletionService userDeletionService;
 
+    /**
+     * 构建用户服务并注入依赖。
+     */
     public UserService(UserRepository userRepository, AdminRepository adminRepository, PageableUtils pageableUtils, SecurityService securityService, WechatUtils wechatUtils, UserDeletionRequestRepository userDeletionRequestRepository, UserDeletionService userDeletionService) {
         this.userRepository = userRepository;
         this.adminRepository = adminRepository;
@@ -57,6 +63,12 @@ public class UserService {
 
     // ========== 认证相关方法 ==========
 
+    /**
+     * 用户注册并签发令牌。
+     *
+     * @param request 注册请求
+     * @return 注册结果
+     */
     @Transactional
     public UserAuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -77,6 +89,12 @@ public class UserService {
         }
     }
 
+    /**
+     * 用户账号密码登录并签发令牌。
+     *
+     * @param request 登录请求
+     * @return 登录结果
+     */
     public UserAuthResponse userLogin(LoginRequest request) {
         Optional<User> userOptional = userRepository.findByUsername(request.getUsername());
         if (userOptional.isEmpty()) {
@@ -98,6 +116,13 @@ public class UserService {
         }
     }
 
+    /**
+     * 重置当前登录主体的密码并刷新令牌。
+     *
+     * @param request        重置密码请求
+     * @param authentication 认证信息
+     * @return 新的令牌响应
+     */
     @Transactional
     public ResetPasswordResponse resetPassword(@Valid ResetPasswordRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
@@ -150,6 +175,12 @@ public class UserService {
         }
     }
 
+    /**
+     * 管理员账号登录并签发令牌。
+     *
+     * @param request 管理员登录请求
+     * @return 登录结果
+     */
     @Transactional
     public AdminAuthResponse adminLogin(@Valid AdminLoginRequest request) {
         Optional<Admin> adminOptional = adminRepository.findByUsername(request.getUsername());
@@ -227,6 +258,12 @@ public class UserService {
         );
     }
 
+    /**
+     * 微信登录或自动注册并签发令牌。
+     *
+     * @param request 微信登录请求
+     * @return 登录结果
+     */
     @Transactional
     public UserAuthResponse wechatLogin(@Valid WechatLoginRequest request) {
         String openid = wechatUtils.getOpenid(request.getJscode());
@@ -261,6 +298,12 @@ public class UserService {
         }
     }
 
+    /**
+     * 绑定微信账号。
+     *
+     * @param request        绑定请求
+     * @param authentication 认证信息
+     */
     @Transactional
     public void bindWechat(@Valid BindWechatRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
@@ -283,11 +326,14 @@ public class UserService {
         }
     }
 
-    /**
+    /*
      * 提交注销申请（幂等）：
      * - 若不存在申请：创建 PENDING，execute_after=now+7d
      * - 若存在且已 CANCELLED/FAILED：重新激活为 PENDING
      * - 若已 DONE：直接拒绝/返回已完成
+     *
+     * @param authentication 认证信息
+     * @return 注销申请记录
      */
     @Transactional
     public UserDeletionRequest requestDeletion(Authentication authentication) {
@@ -325,7 +371,12 @@ public class UserService {
         }
     }
 
-    /** 可选：用户在 7 天内反悔撤销 */
+    /* 可选：用户在 7 天内反悔撤销 */
+    /*
+     * 取消账户注销申请。
+     *
+     * @param userId 用户ID
+     */
     @Transactional
     public void cancelDeletion(Long userId) {
         UserDeletionRequest r = userDeletionRequestRepository.findByUserId(userId)
@@ -337,9 +388,10 @@ public class UserService {
         userDeletionRequestRepository.save(r);
     }
 
-    /**
+    /*
      * 每天跑一次：拉取到期 PENDING，逐条“claim→删除→标记 DONE/FAILED”
      * - claim 用来防止多实例重复处理
+     * 定时处理到期的注销申请。
      */
     @Scheduled(cron = "${deletion.cron:0 30 3 * * *}") // 默认每天 03:30
     public void processDueDeletions() {
@@ -368,6 +420,12 @@ public class UserService {
     }
 
     // 检查用户是否处于注销处理期
+    /**
+     * 检查用户是否存在待处理的注销申请。
+     *
+     * @param userId 用户ID
+     * @param openid 微信openid
+     */
     private void checkUserHasDeletionRequest(Long userId, String openid) {
         if (userDeletionRequestRepository.existsByUserIdOrOpenid(userId, openid)) {
             throw new BusinessException(ErrorCode.USER_DELETION_PENDING);

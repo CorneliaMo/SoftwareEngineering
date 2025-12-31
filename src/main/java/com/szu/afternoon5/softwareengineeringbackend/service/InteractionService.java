@@ -260,6 +260,12 @@ public class InteractionService {
         }
     }
 
+    /**
+     * 校验登录信息与帖子是否存在。
+     *
+     * @param loginPrincipal 登录上下文
+     * @param postId         帖子ID
+     */
     private void checkPrincipalAndPostExist(LoginPrincipal loginPrincipal, Long postId) {
         checkPrincipal(loginPrincipal);
         // 检查帖子是否存在
@@ -268,6 +274,12 @@ public class InteractionService {
         }
     }
 
+    /**
+     * 校验登录上下文并返回用户类型的主体信息。
+     *
+     * @param loginPrincipal 登录上下文
+     * @return 校验通过的主体信息
+     */
     private LoginPrincipal checkPrincipal(LoginPrincipal loginPrincipal) {
         if (loginPrincipal == null || !loginPrincipal.getLoginType().equals(LoginPrincipal.LoginType.user)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
@@ -275,6 +287,12 @@ public class InteractionService {
         return loginPrincipal;
     }
 
+    /**
+     * 关注指定用户。
+     *
+     * @param userId         被关注用户ID
+     * @param authentication 认证信息
+     */
     @Transactional
     public void followUser(Long userId, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
@@ -289,6 +307,12 @@ public class InteractionService {
         }
     }
 
+    /**
+     * 取消关注指定用户。
+     *
+     * @param userId         被取消关注用户ID
+     * @param authentication 认证信息
+     */
     @Transactional
     public void unfollowUser(Long userId, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
@@ -302,6 +326,13 @@ public class InteractionService {
         }
     }
 
+    /**
+     * 获取与目标用户的关注状态。
+     *
+     * @param userId         目标用户ID
+     * @param authentication 认证信息
+     * @return 关注状态响应
+     */
     public FollowStatusResponse getFollowStatus(Long userId, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
         if (!userRepository.existsByUserId(userId)) {
@@ -311,11 +342,27 @@ public class InteractionService {
         }
     }
 
+    /**
+     * 获取当前登录用户的关注列表。
+     *
+     * @param currentPage    当前页码
+     * @param pageSize       每页数量
+     * @param authentication 认证信息
+     * @return 关注列表分页响应
+     */
     public InteractionUserListResponse getFollowing(Integer currentPage, Integer pageSize, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
         return getFollowing(currentPage, pageSize, loginPrincipal.getUserId());
     }
 
+    /**
+     * 获取指定用户的关注列表。
+     *
+     * @param currentPage 当前页码
+     * @param pageSize    每页数量
+     * @param userId      目标用户ID
+     * @return 关注列表分页响应
+     */
     public InteractionUserListResponse getFollowing(Integer currentPage, Integer pageSize, Long userId) {
         // TODO：预留前端排序的空间
         List<String> sortColumns = List.of("follower_id", "followee_id", "created_time");
@@ -331,11 +378,27 @@ public class InteractionService {
         );
     }
 
+    /**
+     * 获取当前登录用户的粉丝列表。
+     *
+     * @param currentPage    当前页码
+     * @param pageSize       每页数量
+     * @param authentication 认证信息
+     * @return 粉丝列表分页响应
+     */
     public InteractionUserListResponse getFollowers(Integer currentPage, Integer pageSize, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
         return getFollowers(currentPage, pageSize, loginPrincipal.getUserId());
     }
 
+    /**
+     * 获取指定用户的粉丝列表。
+     *
+     * @param currentPage 当前页码
+     * @param pageSize    每页数量
+     * @param userId      目标用户ID
+     * @return 粉丝列表分页响应
+     */
     public InteractionUserListResponse getFollowers(Integer currentPage, Integer pageSize, Long userId) {
         // TODO：预留前端排序的空间
         List<String> sortColumns = List.of("follower_id", "followee_id", "created_time");
@@ -351,11 +414,26 @@ public class InteractionService {
         );
     }
 
+    /**
+     * 获取与目标用户的好友状态。
+     *
+     * @param userId         目标用户ID
+     * @param authentication 认证信息
+     * @return 好友状态响应
+     */
     public FriendStatusResponse getFriendStatus(Long userId, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
         return followRecordRepository.getFriendStatus(userId, loginPrincipal.getUserId());
     }
 
+    /**
+     * 获取当前登录用户的好友列表。
+     *
+     * @param currentPage    当前页码
+     * @param pageSize       每页数量
+     * @param authentication 认证信息
+     * @return 好友列表分页响应
+     */
     public InteractionUserListResponse getFriends(Integer currentPage, Integer pageSize, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
         // TODO：预留前端排序的空间
@@ -372,12 +450,25 @@ public class InteractionService {
         );
     }
 
+    /**
+     * 获取当前登录用户的会话列表。
+     *
+     * @param authentication 认证信息
+     * @return 会话列表响应
+     */
     public ConversationListResponse getConversations(Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
         List<ConversationDetail> conversationDetails = conversationRepository.getConversations(loginPrincipal.getUserId());
         return new ConversationListResponse(conversationDetails);
     }
 
+    /**
+     * 创建或获取一对一会话。
+     *
+     * @param request        会话创建请求
+     * @param authentication 认证信息
+     * @return 会话创建结果
+     */
     @Transactional
     public ConversationCreateResponse createConversation(@Valid ConversationCreateRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
@@ -410,6 +501,16 @@ public class InteractionService {
         }
     }
 
+    /**
+     * 获取会话消息列表，支持前后游标与数量限制。
+     *
+     * @param conversationId 会话ID
+     * @param beforeId       游标，获取该ID之前的消息
+     * @param afterId        游标，获取该ID之后的消息
+     * @param limit          返回条数限制
+     * @param authentication 认证信息
+     * @return 会话消息列表
+     */
     public ConversationMessageListResponse getConversationMessages(Long conversationId, Long beforeId, Long afterId, Integer limit, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
         if (conversationRepository.existsByConversationIdAndParticipantId(conversationId, loginPrincipal.getUserId())) {
@@ -429,6 +530,14 @@ public class InteractionService {
         }
     }
 
+    /**
+     * 发送会话消息。
+     *
+     * @param conversationId 会话ID
+     * @param request        消息发送请求
+     * @param authentication 认证信息
+     * @return 消息发送结果
+     */
     public MessageSendResponse sendConversationMessage(Long conversationId, @Valid MessageSendRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = checkPrincipal((LoginPrincipal) authentication.getPrincipal());
         if (conversationRepository.existsByConversationIdAndParticipantId(conversationId, loginPrincipal.getUserId())) {

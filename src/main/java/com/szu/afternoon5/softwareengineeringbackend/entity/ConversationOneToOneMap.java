@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
+/**
+ * 一对一会话映射实体
+ */
 @Data
 @Entity
 @IdClass(ConversationOneToOneMapId.class)

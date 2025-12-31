@@ -10,8 +10,14 @@ import java.util.Optional;
 
 public interface UserDeletionRequestRepository extends JpaRepository<UserDeletionRequest, Long> {
 
+    /**
+     * 根据用户ID查询注销申请。
+     */
     Optional<UserDeletionRequest> findByUserId(Long userId);
 
+    /**
+     * 查询需要执行的注销请求列表。
+     */
     @Query("""
         SELECT r FROM UserDeletionRequest r
         WHERE r.status = com.szu.afternoon5.softwareengineeringbackend.entity.UserDeletionRequest.DeletionRequestStatus.PENDING
@@ -20,6 +26,9 @@ public interface UserDeletionRequestRepository extends JpaRepository<UserDeletio
     """)
     List<UserDeletionRequest> findDueRequests(@Param("now") Instant now);
 
+    /**
+     * 认领一条待处理的注销请求，防止并发重复处理。
+     */
     @Modifying
     @Query("""
         UPDATE UserDeletionRequest r
@@ -29,6 +38,9 @@ public interface UserDeletionRequestRepository extends JpaRepository<UserDeletio
     """)
     int claim(@Param("requestId") Long requestId);
 
+    /**
+     * 更新注销请求处理结果。
+     */
     @Modifying
     @Query("""
         UPDATE UserDeletionRequest r
@@ -40,6 +52,9 @@ public interface UserDeletionRequestRepository extends JpaRepository<UserDeletio
                    @Param("processedAt") Instant processedAt,
                    @Param("failReason") String failReason);
 
+    /**
+     * 判断用户或openid是否存在待处理的注销申请。
+     */
     @Query("""
     SELECT (COUNT(u) > 0) FROM UserDeletionRequest r
     JOIN User u ON r.userId = u.userId

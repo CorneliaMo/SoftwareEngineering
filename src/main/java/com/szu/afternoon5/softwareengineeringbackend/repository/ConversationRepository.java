@@ -16,6 +16,9 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     JOIN ConversationOneToOneMap cvm ON p.conversationId = cvm.conversationId
     WHERE p.userId = :userId
 """)
+    /*
+      获取指定用户的会话列表。
+     */
     List<ConversationDetail> getConversations(Long userId);
 
     @Query("""
@@ -30,6 +33,9 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     WHERE (cvm.userLowId = :me AND cvm.userHighId = :other)
        OR (cvm.userLowId = :other AND cvm.userHighId = :me)
 """)
+    /*
+      获取指定两位用户之间的会话详情。
+     */
     Optional<ConversationDetail> getConversation(Long me, Long other);
 
     @Query("""
@@ -37,5 +43,8 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     JOIN ConversationOneToOneMap cvm ON c.conversationId = cvm.conversationId
     WHERE c.conversationId = :conversationId AND (cvm.userLowId = :participantId OR cvm.userHighId = :participantId)
 """)
+    /*
+      判断指定用户是否为会话参与者。
+     */
     boolean existsByConversationIdAndParticipantId(Long conversationId, Long participantId);
 }

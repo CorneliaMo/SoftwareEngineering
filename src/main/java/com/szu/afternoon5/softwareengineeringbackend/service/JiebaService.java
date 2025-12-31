@@ -27,6 +27,9 @@ public class JiebaService {
     @Getter
     private final JiebaSegmenter segmenter;
 
+    /**
+     * 构建分词服务并加载自定义词典。
+     */
     public JiebaService() {
         // 构造函数中加载词典（只发生一次）
         this.segmenter = new JiebaSegmenter();

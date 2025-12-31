@@ -6,6 +6,9 @@ import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
+/**
+ * 关注动态列表响应体
+ */
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class GetFollowingTimelineResponse extends BaseResponse {

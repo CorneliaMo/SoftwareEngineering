@@ -30,6 +30,9 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      */
     Page<Comment> findByUserIdAndIsDeletedFalse(Long userId, Pageable pageable);
 
+    /**
+     * 统计指定帖子列表的评论数量。
+     */
     @Query(value = """
         SELECT c.post_id AS id, COUNT(*)::bigint AS cnt
         FROM comments c
@@ -39,6 +42,9 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
         """, nativeQuery = true)
     List<IdCount> countByPostIds(@Param("postIds") Long[] postIds);
 
+    /**
+     * 统计指定用户列表的评论数量。
+     */
     @Query(value = """
         SELECT c.user_id AS id, COUNT(*)::bigint AS cnt
         FROM comments c

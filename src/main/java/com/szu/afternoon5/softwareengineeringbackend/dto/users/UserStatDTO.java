@@ -6,6 +6,9 @@ import lombok.Data;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
+/**
+ * 用户统计信息数据模型
+ */
 @Data
 public class UserStatDTO {
 

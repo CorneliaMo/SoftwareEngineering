@@ -11,10 +11,19 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface FollowRecordRepository extends JpaRepository<FollowRecord, Long> {
+    /**
+     * 删除关注关系。
+     */
     int deleteByFollowerIdAndFolloweeId(Long followerId, Long followeeId);
 
+    /**
+     * 判断关注关系是否存在。
+     */
     boolean existsByFollowerIdAndFolloweeId(Long followerId, Long followeeId);
 
+    /**
+     * 查询关注与互关状态。
+     */
     @Query("""
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.FollowStatusResponse(
         ((
@@ -42,6 +51,9 @@ public interface FollowRecordRepository extends JpaRepository<FollowRecord, Long
 """)
     FollowStatusResponse getFollowStatus(@Param("me") Long me, @Param("other") Long other);
 
+    /**
+     * 获取指定用户的关注列表。
+     */
     @Query("""
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.UserInfo(u.userId, u.nickname, u.avatarUrl, u.followingCount, u.followerCount) FROM FollowRecord fr
     JOIN User u ON fr.followeeId = u.userId
@@ -49,6 +61,9 @@ public interface FollowRecordRepository extends JpaRepository<FollowRecord, Long
 """)
     Page<UserInfo> getFollowingUserInfo(Long userId, Pageable pageable);
 
+    /**
+     * 获取指定用户的粉丝列表。
+     */
     @Query("""
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.UserInfo(u.userId, u.nickname, u.avatarUrl, u.followingCount, u.followerCount) FROM FollowRecord fr
     JOIN User u ON fr.followerId = u.userId
@@ -56,6 +71,9 @@ public interface FollowRecordRepository extends JpaRepository<FollowRecord, Long
 """)
     Page<UserInfo> getFollowerUserInfo(Long userId, Pageable pageable);
 
+    /**
+     * 查询是否为互相关注的好友关系。
+     */
     @Query("""
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.FriendStatusResponse(
         (((
@@ -77,6 +95,9 @@ public interface FollowRecordRepository extends JpaRepository<FollowRecord, Long
 """)
     FriendStatusResponse getFriendStatus(Long me, Long other);
 
+    /**
+     * 获取指定用户的好友列表。
+     */
     @Query("""
     SELECT new com.szu.afternoon5.softwareengineeringbackend.dto.interactions.UserInfo(u.userId, u.nickname, u.avatarUrl, u.followingCount, u.followerCount)
     FROM User u

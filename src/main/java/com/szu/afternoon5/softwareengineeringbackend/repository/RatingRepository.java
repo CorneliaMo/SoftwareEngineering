@@ -32,6 +32,9 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         WHERE r.post_id = ANY(:postIds)
         GROUP BY r.post_id
         """, nativeQuery = true)
+    /*
+      统计指定帖子列表的评分数量。
+     */
     List<IdCount> countByPostIds(@Param("postIds") Long[] postIds);
 
     @Query(value = """
@@ -40,5 +43,8 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
         WHERE r.user_id = ANY(:userIds)
         GROUP BY r.user_id
         """, nativeQuery = true)
+    /*
+     * 统计指定用户列表的评分数量。
+     */
     List<IdCount> countByUserIds(@Param("userIds") Long[] userIds);
 }

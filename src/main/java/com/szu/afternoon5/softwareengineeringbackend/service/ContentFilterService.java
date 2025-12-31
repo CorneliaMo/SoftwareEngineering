@@ -35,6 +35,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+/**
+ * 内容过滤器服务，维护正则列表与AC自动机
+ */
 @Service
 public class ContentFilterService {
     private static final Logger logger = LoggerFactory.getLogger(ContentFilterService.class);
@@ -48,16 +51,25 @@ public class ContentFilterService {
     private volatile List<RegexEntry> regexPatterns = List.of();
     private volatile Trie wordTrie = Trie.builder().build();
 
+    /**
+     * 构建内容过滤服务并注入依赖。
+     */
     public ContentFilterService(PageableUtils pageableUtils, ContentFilterRepository contentFilterRepository) {
         this.pageableUtils = pageableUtils;
         this.contentFilterRepository = contentFilterRepository;
     }
 
+    /**
+     * 启动初始化过滤器缓存
+     */
     @PostConstruct
     public void initFilters() {
         syncFromDatabase();
     }
 
+    /**
+     * 定时从数据库增量同步过滤器
+     */
     @Scheduled(fixedDelayString = "${content_filter.sync_delay_ms:300000}")
     public void syncFromDatabase() {
         List<ContentFilter> latestFilters = contentFilterRepository.findAll();
@@ -134,6 +146,9 @@ public class ContentFilterService {
         }
     }
 
+    /**
+     * 获取过滤器列表（分页）
+     */
     public ContentFilterListResponse getContentFilters(Integer currentPage, Integer pageSize) {
         List<String> sortColumns = List.of("filter_id", "filter_content", "filter_type", "level", "category");
         Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "filter_id", "ASC");
@@ -148,6 +163,9 @@ public class ContentFilterService {
         );
     }
 
+    /**
+     * 新增过滤器并更新缓存
+     */
     @Transactional
     public void createContentFilter(@Valid ContentFilterCreateRequest request) {
         validateRegexIfNeeded(request.getFilterType(), request.getFilterContent());
@@ -161,6 +179,9 @@ public class ContentFilterService {
         applyUpsert(saved, true);
     }
 
+    /**
+     * 更新过滤器并增量刷新缓存
+     */
     @Transactional
     public void updateContentFilter(Long filterId, @Valid ContentFilterUpdateRequest request) {
         Optional<ContentFilter> contentFilterOptional = contentFilterRepository.findById(filterId);
@@ -178,6 +199,9 @@ public class ContentFilterService {
         }
     }
 
+    /**
+     * 删除过滤器并移除缓存
+     */
     @Transactional
     public void deleteContentFilter(Long filterId) {
         Optional<ContentFilter> contentFilterOptional = contentFilterRepository.findById(filterId);
@@ -231,7 +255,9 @@ public class ContentFilterService {
         return new FilterResult(!matches.isEmpty(), matches);
     }
 
-    // 更新过滤器缓存
+    /**
+     * 更新过滤器缓存并按类型刷新索引
+     */
     private void applyUpsert(ContentFilter filter, boolean strict) {
         if (filter == null || filter.getFilterId() == null) {
             return;
@@ -280,7 +306,9 @@ public class ContentFilterService {
         }
     }
 
-    // 从过滤器缓存中移除
+    /**
+     * 从缓存中移除指定过滤器
+     */
     private void removeFromCache(Long filterId) {
         if (filterId == null) {
             return;
@@ -312,6 +340,9 @@ public class ContentFilterService {
         }
     }
 
+    /**
+     * 重建正则匹配列表
+     */
     private void rebuildRegexPatterns() {
         List<RegexEntry> entries = new ArrayList<>();
         for (Map.Entry<Long, Pattern> entry : regexPatternsById.entrySet()) {
@@ -323,6 +354,9 @@ public class ContentFilterService {
         regexPatterns = List.copyOf(entries);
     }
 
+    /**
+     * 重建关键词自动机
+     */
     private void rebuildWordTrie() {
         Trie.TrieBuilder builder = Trie.builder();
         for (String word : wordIdsByPattern.keySet()) {
@@ -331,6 +365,9 @@ public class ContentFilterService {
         wordTrie = builder.build();
     }
 
+    /**
+     * 判断过滤器内容是否一致
+     */
     private boolean isSameFilter(ContentFilter left, ContentFilter right) {
         return Objects.equals(left.getFilterContent(), right.getFilterContent())
                 && left.getFilterType() == right.getFilterType()
@@ -338,6 +375,9 @@ public class ContentFilterService {
                 && Objects.equals(left.getCategory(), right.getCategory());
     }
 
+    /**
+     * 校验过滤内容合法性
+     */
     private void validateRegexIfNeeded(ContentFilter.FilterType filterType, String content) {
         if (filterType == ContentFilter.FilterType.regex) {
             compileRegex(content, true);
@@ -346,6 +386,9 @@ public class ContentFilterService {
         }
     }
 
+    /**
+     * 编译正则表达式
+     */
     private Pattern compileRegex(String content, boolean strict) {
         if (content == null) {
             if (strict) {
@@ -364,6 +407,9 @@ public class ContentFilterService {
         }
     }
 
+    /**
+     * 规范化关键词内容
+     */
     private String normalizeWord(String content, boolean strict) {
         if (content == null || content.isBlank()) {
             if (strict) {
@@ -374,6 +420,9 @@ public class ContentFilterService {
         return content;
     }
 
+    /**
+     * 从关键词索引中移除指定过滤器
+     */
     private void removeWordIndex(Long filterId, String word) {
         if (word == null) {
             return;
@@ -388,6 +437,9 @@ public class ContentFilterService {
         }
     }
 
+    /**
+     * 构建命中详情
+     */
     private FilterMatch buildMatch(ContentFilter filter, Long filterId, String ruleContent,
                                    int start, int end, String matchText) {
         FilterMatch match = new FilterMatch();
@@ -411,6 +463,9 @@ public class ContentFilterService {
         private final boolean matched;
         private final List<FilterMatch> matches;
 
+        /**
+         * 构建过滤命中结果。
+         */
         public FilterResult(boolean matched, List<FilterMatch> matches) {
             this.matched = matched;
             this.matches = matches;
@@ -439,6 +494,9 @@ public class ContentFilterService {
         private final String ruleContent;
         private final Pattern pattern;
 
+        /**
+         * 构建正则缓存条目。
+         */
         private RegexEntry(Long filterId, String ruleContent, Pattern pattern) {
             this.filterId = filterId;
             this.ruleContent = ruleContent;

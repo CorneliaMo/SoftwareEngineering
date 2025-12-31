@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * 管理端业务服务
+ */
 @Service
 public class AdminService {
 
@@ -30,6 +33,9 @@ public class AdminService {
     private final OperationLogRepository operationLogRepository;
     private final AdminRepository adminRepository;
 
+    /**
+     * 构建管理端服务并注入依赖。
+     */
     public AdminService(PostRepository postRepository, PageableUtils pageableUtils, UserRepository userRepository, OperationLogRepository operationLogRepository, AdminRepository adminRepository){
         this.postRepository = postRepository;
         this.userRepository = userRepository;
@@ -120,17 +126,26 @@ public class AdminService {
         );
     }
 
+    /**
+     * 写入单条操作日志
+     */
     @Transactional
     protected void insertOperationLog(Long adminId, String operationType, Long targetId, String targetType, String operationDetail, String ipAddress) {
         OperationLog operationLog = new OperationLog(adminId, operationType, targetId, targetType, operationDetail, ipAddress);
         operationLogRepository.save(operationLog);
     }
 
+    /**
+     * 批量写入操作日志
+     */
     @Transactional
     protected void insertOperationLogs(List<OperationLog> operationLogs) {
         operationLogRepository.saveAll(operationLogs);
     }
 
+    /**
+     * 创建管理员（仅超级管理员可用）
+     */
     @Transactional
     public void createAdmin(@Valid AdminCreateRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
@@ -160,6 +175,9 @@ public class AdminService {
         }
     }
 
+    /**
+     * 获取管理员列表（分页）
+     */
     public AdminListResponse getAdmins(Integer currentPage, Integer pageSize) {
         // TODO：预留前端排序的空间
         List<String> sortColumns = List.of("admin_id", "user_id", "role", "status", "last_login", "created_time");
@@ -174,6 +192,9 @@ public class AdminService {
         );
     }
 
+    /**
+     * 更新管理员信息（仅超级管理员可用）
+     */
     @Transactional
     public void updateAdmin(Long adminId, AdminUpdateRequest request, Authentication authentication) {
         checkIsSuperadmin(authentication);
@@ -190,6 +211,9 @@ public class AdminService {
         }
     }
 
+    /**
+     * 重置管理员密码（仅超级管理员可用）
+     */
     @Transactional
     public void resetAdminPassword(Long adminId, @Valid AdminResetPasswordRequest request, Authentication authentication) {
         checkIsSuperadmin(authentication);
@@ -203,6 +227,9 @@ public class AdminService {
         }
     }
 
+    /**
+     * 校验当前登录用户是否为超级管理员
+     */
     @Transactional
     protected void checkIsSuperadmin(Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();
@@ -220,6 +247,9 @@ public class AdminService {
         }
     }
 
+    /**
+     * 删除管理员（仅超级管理员可用）
+     */
     @Transactional
     public void deleteAdmin(Long adminId, Authentication authentication) {
         checkIsSuperadmin(authentication);
@@ -231,6 +261,9 @@ public class AdminService {
         }
     }
 
+    /**
+     * 批量删除帖子并记录操作日志
+     */
     @Transactional
     public void deletePosts(@Valid AdminBatchDeletePostsRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();

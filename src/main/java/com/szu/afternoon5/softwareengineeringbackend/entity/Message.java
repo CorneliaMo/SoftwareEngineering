@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 import javax.annotation.Nullable;
 import java.time.Instant;
 
+/**
+ * 消息实体
+ */
 @Data
 @Entity
 @NoArgsConstructor

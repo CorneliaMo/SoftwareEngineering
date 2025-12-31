@@ -20,6 +20,9 @@ public class SearchController {
 
     private final SearchService searchService;
 
+    /**
+     * 构建搜索控制器并注入依赖。
+     */
     public SearchController(SearchService searchService) {
         this.searchService = searchService;
     }

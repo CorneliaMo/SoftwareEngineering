@@ -3,6 +3,9 @@ package com.szu.afternoon5.softwareengineeringbackend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * 内容过滤器实体
+ */
 @Data
 @Entity
 @NoArgsConstructor

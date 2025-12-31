@@ -209,6 +209,12 @@ public class TagService {
         return s;
     }
 
+    /**
+     * 根据标准化名称批量补齐标签并返回对应ID列表。
+     *
+     * @param normalizedToDisplayName 标准化名称到展示名的映射
+     * @return 对应的标签ID列表
+     */
     private List<Long> insertMissedTags(Map<String, String> normalizedToDisplayName) {
         Set<String> normalizedNames = normalizedToDisplayName.keySet();
 

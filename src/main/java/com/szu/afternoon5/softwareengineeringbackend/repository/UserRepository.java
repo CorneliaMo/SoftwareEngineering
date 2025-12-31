@@ -39,8 +39,14 @@ public interface UserRepository extends JpaRepository<User,Long> {
      */
     Page<User> findByNicknameContainingIgnoreCase(String nickname, Pageable pageable);
 
+    /**
+     * 根据微信openid查询用户。
+     */
     Optional<User> findByOpenid(String openid);
 
+    /**
+     * 按可选条件分页查询用户列表。
+     */
     @Query("""
     SELECT u FROM User u
         WHERE (:userId IS NULL OR u.userId = :userId)
@@ -49,6 +55,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
 """)
     Page<User> findAllByOptionalNicknameUsernameUserId(Pageable pageable, String nickname, String username, Long userId);
 
+    /**
+     * 增量更新用户评论计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE "users"
@@ -57,6 +66,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
         """, nativeQuery = true)
     int addCommentCount(@Param("userId") Long userId, @Param("delta") long delta);
 
+    /**
+     * 增量更新用户帖子计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE "users"
@@ -65,6 +77,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
         """, nativeQuery = true)
     int addPostCount(@Param("userId") Long userId, @Param("delta") long delta);
 
+    /**
+     * 增量更新用户评分计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE "users"
@@ -73,6 +88,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
         """, nativeQuery = true)
     int addRatingCount(@Param("userId") Long userId, @Param("delta") long delta);
 
+    /**
+     * 校准并设置用户评论计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE users
@@ -81,6 +99,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
         """, nativeQuery = true)
     int setCommentCount(@Param("userId") Long userId, @Param("value") long value);
 
+    /**
+     * 校准并设置用户帖子计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE users
@@ -89,6 +110,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
         """, nativeQuery = true)
     int setPostCount(@Param("userId") Long userId, @Param("value") long value);
 
+    /**
+     * 校准并设置用户评分计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE users
@@ -97,6 +121,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
         """, nativeQuery = true)
     int setRatingCount(@Param("userId") Long userId, @Param("value") long value);
 
+    /**
+     * 增量更新用户粉丝计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE "users"
@@ -105,6 +132,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
         """, nativeQuery = true)
     int addFollowerCount(@Param("userId") Long userId, int delta);
 
+    /**
+     * 增量更新用户关注计数。
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
         UPDATE "users"

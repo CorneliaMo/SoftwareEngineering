@@ -26,6 +26,9 @@ public class UserController {
     private final UserService userService;
     private final InteractionService interactionService;
 
+    /**
+     * 构建用户控制器并注入依赖。
+     */
     public UserController(UserService userService, InteractionService interactionService) {
         this.userService = userService;
         this.interactionService = interactionService;

@@ -6,6 +6,9 @@ import lombok.Data;
 import javax.annotation.Nullable;
 import java.time.Instant;
 
+/**
+ * 会话实体
+ */
 @Data
 @Entity
 @Table(name = "conversations")

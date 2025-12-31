@@ -24,11 +24,20 @@ public class AuthController {
     private final UserService userService;
     private final SecurityService securityService;
 
+    /**
+     * 构建认证控制器并注入认证依赖。
+     */
     public AuthController(UserService userService, SecurityService securityService) {
         this.userService = userService;
         this.securityService = securityService;
     }
 
+    /**
+     * 微信登录接口。
+     *
+     * @param request 微信登录请求体
+     * @return 登录结果，包含用户信息与 JWT
+     */
     @PostMapping("/wechat-login")
     public UserAuthResponse wechatLogin(@Valid @RequestBody WechatLoginRequest request) {
         return userService.wechatLogin(request);

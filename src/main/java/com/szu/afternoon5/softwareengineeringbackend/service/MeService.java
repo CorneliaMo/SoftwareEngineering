@@ -203,6 +203,12 @@ public class MeService {
         }
     }
 
+    /**
+     * 上传并更新用户头像。
+     *
+     * @param request        头像上传请求体
+     * @param authentication 认证信息
+     */
     @Transactional
     public void uploadAvatar(UploadAvatarRequest request, Authentication authentication) {
         LoginPrincipal loginPrincipal = (LoginPrincipal) authentication.getPrincipal();

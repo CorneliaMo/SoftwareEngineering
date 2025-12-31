@@ -22,6 +22,9 @@ public class MeController {
 
     private final MeService meService;
 
+    /**
+     * 构建个人中心控制器并注入依赖。
+     */
     public MeController(MeService meService) {
         this.meService = meService;
     }
@@ -81,7 +84,11 @@ public class MeController {
     }
 
     /**
+     * 上传并更新用户头像。
      *
+     * @param request        头像上传请求体
+     * @param authentication 认证信息
+     * @return 操作结果
      */
     @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BaseResponse uploadAvatar(@ModelAttribute UploadAvatarRequest request, Authentication authentication) {

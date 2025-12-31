@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
+/**
+ * 帖子与封面媒体的聚合视图
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -47,10 +50,16 @@ public class PostWithCover {
 
     private Boolean hasVideo;
 
+    /**
+     * 还原帖子实体
+     */
     public Post getPost() {
         return new Post(postId, userId, postTitle, postText, isDeleted, deletedTime, createdTime, updatedTime, ratingCount, commentCount, coverMediaId, hasImage, hasVideo);
     }
 
+    /**
+     * 还原封面媒体实体
+     */
     public PostMedia getPostMedia() {
         return new PostMedia(coverMediaId, uploadUserId, mediaUrl, mediaType, sortOrder);
     }
