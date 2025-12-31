@@ -49,7 +49,11 @@ public class AdminService {
         List<String> sortColumns = List.of("user_id", "nickname", "created_time", "updated_time", "comment_count", "post_count", "rating_count");
         Pageable pageable = pageableUtils.buildPageable(sortColumns, currentPage - 1, pageSize, "user_id", "ASC");
 
-        Page<User> userPage = userRepository.findAllByOptionalNicknameUsernameUserId(pageable, nickname.isBlank()?null:"%"+nickname+"%", username.isBlank()?null:"%"+username+"%", userId);
+        Page<User> userPage = userRepository.findAllByOptionalNicknameUsernameUserId(
+                pageable,
+                (nickname == null || nickname.isBlank())?null:"%"+nickname+"%",
+                (username == null || username.isBlank())?null:"%"+username+"%",
+                userId);
 
         return new AdminUserListResponse(
                 userPage.getTotalPages(),
@@ -102,10 +106,10 @@ public class AdminService {
         // 查询所有帖子
         postPage = postRepository.findAllWithCoverByOptionalUserIdUsernameNicknamePostType(pageable,
                 userId,
-                username.isBlank()?null:"%"+username+"%",
-                nickname.isBlank()?null:"%"+nickname+"%",
-                postType.isBlank()||postType.equals("video")?null:postType.equals("image"),
-                postType.isBlank()||postType.equals("image")?null:postType.equals("video"));
+                (username == null || username.isBlank())?null:"%"+username+"%",
+                (nickname == null || nickname.isBlank())?null:"%"+nickname+"%",
+                (postType == null || postType.isBlank()||postType.equals("video"))?null:postType.equals("image"),
+                (postType == null || postType.isBlank()||postType.equals("image"))?null:postType.equals("video"));
 
         return new AdminPostListResponse(
                 postPage.getTotalPages(),
@@ -235,10 +239,9 @@ public class AdminService {
         }
         List<Post> posts = postRepository.findAllByPostIdIn(request.getPostIds());
         List<OperationLog> operationLogs = new ArrayList<>();
-        OperationLog operationLogTemplate = new OperationLog(loginPrincipal.getAdminId(), "delete", null, "post", "", "");
         posts.forEach(post -> {
-            operationLogTemplate.setTargetId(post.getPostId());
-            operationLogs.add(operationLogTemplate);
+            OperationLog operationLog = new OperationLog(loginPrincipal.getAdminId(), "delete", post.getPostId(), "post", "", "");
+            operationLogs.add(operationLog);
             post.setIsDeleted(true);
         });
         postRepository.saveAll(posts);
