@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS "users" (
                          "follower_count" INTEGER NOT NULL DEFAULT 0,
                          "following_count" INTEGER NOT NULL DEFAULT 0,
                          PRIMARY KEY ("user_id"),
-                         UNIQUE ("openid")
+                         UNIQUE ("openid"),
+                         UNIQUE ("email"),
+                         UNIQUE ("username")
 )
 ;
 COMMENT ON TABLE "users" IS '用户表，储存用户信息';
@@ -69,6 +71,7 @@ COMMENT ON COLUMN "posts"."rating_count" IS '评分数量';
 COMMENT ON COLUMN "posts"."comment_count" IS '评论数量';
 COMMENT ON COLUMN "posts"."cover_media_id" IS '冗余字段，储存封面对应的postMediaId';
 CREATE INDEX IF NOT EXISTS "fk__posts__users" ON "posts" ("user_id");
+CREATE INDEX IF NOT EXISTS "updated_time" ON "posts" ("updated_time");
 -- 创建GIN索引需要在数据库中以postgres用户执行 CREATE EXTENSION pg_trgm;
 CREATE INDEX IF NOT EXISTS "idx_posts_text_query" ON "posts" USING gin ("text_query");
 CREATE INDEX IF NOT EXISTS idx_posts_user_active ON posts(user_id) WHERE is_deleted = false;
@@ -95,10 +98,6 @@ COMMENT ON COLUMN "post_media"."media_type" IS '媒体类型';
 COMMENT ON COLUMN "post_media"."sort_order" IS '指示媒体在帖子中的顺序';
 CREATE INDEX IF NOT EXISTS "fk__post_media__posts" ON "post_media" ("post_id");
 CREATE INDEX IF NOT EXISTS "fk_post_media_users" ON "post_media" ("upload_user_id");
-
-ALTER TABLE "posts" DROP CONSTRAINT IF EXISTS "FK_posts_post_media";
-
-ALTER TABLE "posts" ADD CONSTRAINT "FK_posts_post_media" FOREIGN KEY ("cover_media_id") REFERENCES "post_media" ("media_id") ON UPDATE CASCADE ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS "comments" (
 	"comment_id" SERIAL NOT NULL,
@@ -129,6 +128,7 @@ CREATE INDEX IF NOT EXISTS "fk_comments_users" ON "comments" ("user_id");
 CREATE INDEX IF NOT EXISTS "fk_comments_comments" ON "comments" ("parent_id");
 CREATE INDEX IF NOT EXISTS idx_comments_post_active ON comments(post_id) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_comments_user_active ON comments(user_id) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS "post_id_user_id" ON "comments" ("post_id", "user_id");
 
 
 CREATE TABLE IF NOT EXISTS "tags" (
@@ -144,6 +144,7 @@ COMMENT ON COLUMN "tags"."tag_id" IS '标签id';
 COMMENT ON COLUMN "tags"."name" IS '标签显示名称';
 COMMENT ON COLUMN "tags"."normalized_name" IS '标签归一化后的名称，用于筛选排序';
 COMMENT ON COLUMN "tags"."created_time" IS '创建时间';
+CREATE INDEX IF NOT EXISTS "normalized_name" ON "tags" ("normalized_name");
 
 CREATE TABLE IF NOT EXISTS "post_tags" (
 	"post_id" INTEGER NOT NULL,
@@ -181,7 +182,7 @@ CREATE INDEX IF NOT EXISTS "fk__ratings__posts" ON "ratings" ("post_id");
 CREATE INDEX IF NOT EXISTS "fk__ratings__users" ON "ratings" ("user_id");
 CREATE INDEX IF NOT EXISTS idx_ratings_post ON ratings(post_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_user ON ratings(user_id);
-
+CREATE INDEX IF NOT EXISTS "rating_post_id_user_id" ON "ratings" ("post_id", "user_id");
 
 CREATE TABLE IF NOT EXISTS "admins" (
 	"admin_id" SERIAL NOT NULL,
@@ -290,6 +291,7 @@ COMMENT ON COLUMN "messages"."content" IS '文本内容';
 COMMENT ON COLUMN "messages"."created_time" IS '创建时间';
 COMMENT ON COLUMN "messages"."is_recalled" IS '是否撤回，软删除/撤回（可选）';
 COMMENT ON COLUMN "messages"."recalled_time" IS '撤回时间';
+CREATE INDEX IF NOT EXISTS "conversation_id_sender_id" ON "messages" ("conversation_id", "sender_id");
 
 CREATE TABLE IF NOT EXISTS "participants" (
                                 "record_id" SERIAL NOT NULL,
@@ -358,3 +360,58 @@ COMMENT ON COLUMN "user_deletion_requests"."status" IS 'PENDING / PROCESSING / D
 COMMENT ON COLUMN "user_deletion_requests"."processed_time" IS '完成时间';
 COMMENT ON COLUMN "user_deletion_requests"."fail_reason" IS '失败原因';
 CREATE INDEX IF NOT EXISTS "idx_user_deletion_requests_due" ON "user_deletion_requests" ("status", "execute_after");
+
+CREATE TABLE IF NOT EXISTS "content_filters" (
+                                   "filter_id" SERIAL NOT NULL,
+                                   "filter_content" VARCHAR(1024) NOT NULL,
+                                   "filter_type" VARCHAR(50) NOT NULL,
+                                   "level" VARCHAR(50) NOT NULL,
+                                   "category" VARCHAR(50) NOT NULL,
+                                   PRIMARY KEY ("filter_id")
+)
+;
+COMMENT ON TABLE "content_filters" IS '储存内容过滤相关的设置';
+COMMENT ON COLUMN "content_filters"."filter_id" IS '';
+COMMENT ON COLUMN "content_filters"."filter_content" IS '过滤内容，放置匹配单词或正则表达式';
+COMMENT ON COLUMN "content_filters"."filter_type" IS '过滤器类型，word | regex，表示字典树单词匹配或正则匹配';
+COMMENT ON COLUMN "content_filters"."level" IS '警告类型，block / warn / log';
+COMMENT ON COLUMN "content_filters"."category" IS '色情 / 辱骂 / 广告 / 政治…';
+
+
+CREATE TABLE IF NOT EXISTS "metric_defs" (
+                               "metric_id" SERIAL NOT NULL,
+                               "metric_key" VARCHAR(255) NOT NULL,
+                               "description" TEXT NULL DEFAULT NULL,
+                               "default_granularity" INTEGER NOT NULL,
+                               "created_time" TIMESTAMP NOT NULL,
+                               PRIMARY KEY ("metric_id")
+)
+;
+COMMENT ON TABLE "metric_defs" IS '指标的定义只能由后端程序自动生成，无法通过管理接口自行更改';
+COMMENT ON COLUMN "metric_defs"."metric_id" IS '';
+COMMENT ON COLUMN "metric_defs"."metric_key" IS '指标标识，例如post_count';
+COMMENT ON COLUMN "metric_defs"."description" IS '描述';
+COMMENT ON COLUMN "metric_defs"."default_granularity" IS '默认统计粒度，以秒为单位';
+COMMENT ON COLUMN "metric_defs"."created_time" IS '创建时间';
+CREATE INDEX IF NOT EXISTS "metric_key" ON "metric_defs" ("metric_key");
+
+
+
+CREATE TABLE IF NOT EXISTS "metric_records" (
+                                  "metric_id" INTEGER NOT NULL,
+                                  "granularity" INTEGER NOT NULL,
+                                  "bucket_start" TIMESTAMP NOT NULL,
+                                  "dim_key" VARCHAR(255) NOT NULL,
+                                  "shard_id" INTEGER NOT NULL,
+                                  "value" INTEGER NOT NULL,
+                                  CONSTRAINT "FK_metric_records_metric_defs" FOREIGN KEY ("metric_id") REFERENCES "metric_defs" ("metric_id") ON UPDATE CASCADE ON DELETE CASCADE
+)
+;
+COMMENT ON TABLE "metric_records" IS '指标数据储存桶';
+COMMENT ON COLUMN "metric_records"."metric_id" IS '指标id，对应一个具体定义的指标id';
+COMMENT ON COLUMN "metric_records"."granularity" IS '统计粒度，小整数（60=1m, 300=5m, 3600=1h, 86400=1d）';
+COMMENT ON COLUMN "metric_records"."bucket_start" IS '桶的起始时间，对齐到粒度边界';
+COMMENT ON COLUMN "metric_records"."dim_key" IS '额外标记，可空，例如 type:text / type:image';
+COMMENT ON COLUMN "metric_records"."shard_id" IS '分片id，0..63随机填写，用于分散数据库并发写锁的压力';
+COMMENT ON COLUMN "metric_records"."value" IS '';
+CREATE INDEX IF NOT EXISTS "metric_id_bucket_start" ON "metric_records" ("metric_id", "bucket_start");
